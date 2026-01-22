@@ -52,9 +52,14 @@ export default function NeuralCore() {
         // Hover effect overlay
         if (hovered) {
             materialRef.current.speed = 5
-            materialRef.current.distort += 0.2
+            materialRef.current.distort = 0.8 // Set instead of += to avoid accumulation
+
+            // Subtle glitchy jitter
+            meshRef.current.position.x = (Math.random() - 0.5) * 0.05
+            meshRef.current.position.y = (Math.random() - 0.5) * 0.05
         } else {
             materialRef.current.speed = 2
+            meshRef.current.position.lerp(new THREE.Vector3(0, 0, 0), 0.1)
         }
     })
 

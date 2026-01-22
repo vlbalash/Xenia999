@@ -43,7 +43,7 @@ export const Overlay = () => {
                 </Section>
 
                 <Section right opacity={1}>
-                    <h1 className="font-mono text-xs tracking-[0.5em] text-purple-400 mb-4 uppercase">Growth & Data</h1>
+                    <h1 className="font-mono text-xs tracking-[0.5em] text-cyan-400 mb-4 uppercase">Growth & Data</h1>
                     <h2 className="text-4xl md:text-5xl font-bold mb-2">500% <span className="text-xl font-thin">YoY</span></h2>
                     <p className="text-gray-400 font-light text-sm md:text-base">
                         Scaling dynamic infrastructure across the neural web.
@@ -52,7 +52,7 @@ export const Overlay = () => {
                 </Section>
 
                 <Section opacity={1}>
-                    <h1 className="font-mono text-xs tracking-[0.5em] text-green-400 mb-4 uppercase">Global Reach</h1>
+                    <h1 className="font-mono text-xs tracking-[0.5em] text-cyan-400 mb-4 uppercase">Global Reach</h1>
                     <h2 className="text-4xl md:text-5xl font-thin mb-4">
                         90+ <span className="font-bold">Countries</span>
                     </h2>

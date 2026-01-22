@@ -11,7 +11,7 @@ export default function Scene() {
     const scroll = useScroll()
     const cameraRef = useRef<THREE.Group>(null!)
 
-    useFrame((_state, delta) => {
+    useFrame((state, delta) => {
         // A simple rig that moves the camera based on scroll
         // The content is 4 pages long.
         // r1: 0-0.25 (Hero)
@@ -30,6 +30,16 @@ export default function Scene() {
         // easier: rotate a group holding the camera
         if (cameraRef.current) {
             cameraRef.current.rotation.y = THREE.MathUtils.damp(cameraRef.current.rotation.y, targetRotationY, 4, delta)
+
+            // Camera Shake on Explosion (last section)
+            if (scroll.offset > 0.85) {
+                const shake = (scroll.offset - 0.85) * 5.0
+                state.camera.position.x = (Math.random() - 0.5) * shake * 0.5
+                state.camera.position.y = (Math.random() - 0.5) * shake * 0.5
+            } else {
+                state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, 0, 0.1)
+                state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 0, 0.1)
+            }
         }
     })
 
