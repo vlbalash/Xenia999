@@ -3,6 +3,7 @@ import { ScrollControls } from '@react-three/drei'
 import Scene from './Scene'
 import { Overlay } from './Overlay'
 import { Suspense } from 'react'
+import Audio from './Audio'
 
 function App() {
     return (
@@ -15,6 +16,7 @@ function App() {
                     </ScrollControls>
                 </Suspense>
             </Canvas>
+            <Audio />
             {/* Noise Overlay */}
             <div className="pointer-events-none fixed inset-0 z-50 opacity-20 mix-blend-overlay"
                 style={{

@@ -2,8 +2,10 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Stars, Float, PerspectiveCamera } from '@react-three/drei'
 import NeuralCore from './NeuralCore'
+import ParticleExplosion from './ParticleExplosion'
 import * as THREE from 'three'
 import { useScroll } from '@react-three/drei'
+import Effects from './Effects'
 
 export default function Scene() {
     const scroll = useScroll()
@@ -46,17 +48,15 @@ export default function Scene() {
             {/* Camera Rig Group */}
             <group ref={cameraRef}>
                 <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
-                {/* Add some stars in background that move with camera or stay static? 
-               If inside group, they rotate WITH camera. better outside? 
-               Let's put them outside.
-           */}
             </group>
 
             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
             <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
                 <NeuralCore />
+                <ParticleExplosion />
             </Float>
+            <Effects />
         </>
     )
 }
