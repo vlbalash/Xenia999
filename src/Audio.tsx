@@ -45,7 +45,7 @@ export default function Audio() {
         const analyser = ctx.createAnalyser()
         analyser.fftSize = 256
         const bufferLength = analyser.frequencyBinCount
-        const dataArray = new Uint8Array(bufferLength)
+        const dataArray = new Uint8Array(new ArrayBuffer(bufferLength))
         analyserRef.current = analyser
         dataArrayRef.current = dataArray
 
@@ -59,6 +59,7 @@ export default function Audio() {
         let lastPeakTime = 0
         const checkPeaks = () => {
             if (!analyserRef.current || !dataArrayRef.current) return
+            // @ts-expect-error - TypeScript type mismatch between ArrayBufferLike and ArrayBuffer in Web Audio API
             analyserRef.current.getByteFrequencyData(dataArrayRef.current)
 
             // Calculate average energy in the bass/mid range (approx. first 10 bins)
