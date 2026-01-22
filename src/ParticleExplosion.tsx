@@ -5,7 +5,7 @@ import { useScroll } from '@react-three/drei'
 
 const vertexShader = `
   varying vec2 vUv;
-  varying float vPull;
+  varying float vLife;
   uniform float uTime;
   uniform float uExplosion;
 
@@ -14,22 +14,29 @@ const vertexShader = `
   void main() {
     vUv = uv;
     
+    // Spread life/randomness
+    vLife = aRandom.x;
+
     // Calculate direction from center
     vec3 dir = normalize(position);
     
-    // Explosion force based on uExplosion (0 to 1)
-    // Particles move away from center with some randomness
-    float force = pow(uExplosion, 2.0) * 10.0;
+    // Explosion force
+    float force = pow(uExplosion, 2.5) * 15.0;
+    
+    // Add velocity-based stretching (streak effect)
+    // We can simulate this by moving the vertex along the direction based on explosion
     vec3 newPosition = position + dir * force * aRandom.x;
     
     // Add some noise/turbulence
-    newPosition.x += sin(uTime + aRandom.y * 10.0) * uExplosion * 0.5;
-    newPosition.y += cos(uTime + aRandom.z * 10.0) * uExplosion * 0.5;
+    newPosition.x += sin(uTime * 2.0 + aRandom.y * 20.0) * uExplosion * 0.2;
+    newPosition.y += cos(uTime * 2.0 + aRandom.z * 20.0) * uExplosion * 0.2;
 
     vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
     
-    // Size attenuation (bigger as they explode outward)
-    gl_PointSize = (2.0 + aRandom.x * 5.0) * (1.0 + uExplosion * 2.0);
+    // Size attenuation
+    // Bigger at the start of explosion, then fade
+    float size = (3.0 + aRandom.y * 10.0);
+    gl_PointSize = size * (1.0 + uExplosion * 3.0);
     gl_PointSize *= (1.0 / -mvPosition.z);
     
     gl_Position = projectionMatrix * mvPosition;
@@ -38,21 +45,26 @@ const vertexShader = `
 
 const fragmentShader = `
   varying vec2 vUv;
+  varying float vLife;
   uniform float uExplosion;
   uniform vec3 uColor;
 
   void main() {
-    // Round particles
+    // Round particles with soft edges (glow)
     float dist = distance(gl_PointCoord, vec2(0.5));
     if (dist > 0.5) discard;
     
-    // Glow effect
+    // Inner core vs outer glow
     float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+    alpha = pow(alpha, 2.0); // Sharper glow
     
-    // Color shift on explosion
-    vec3 color = mix(uColor, vec3(1.0), uExplosion * 0.5);
+    // Fade out as they explode
+    alpha *= (1.2 - uExplosion);
     
-    gl_FragColor = vec4(color, alpha * (1.0 - uExplosion * 0.5));
+    // Color shift: Cyan -> white -> Magenta
+    vec3 finalColor = mix(uColor, vec3(1.0), uExplosion * 0.8);
+    
+    gl_FragColor = vec4(finalColor, alpha);
   }
 `
 
