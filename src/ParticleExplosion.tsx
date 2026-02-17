@@ -96,14 +96,14 @@ export default function ParticleExplosion() {
     useFrame((state) => {
         const offset = scroll.offset // 0 to 1
 
-        // Aggressive mapping for the final page
-        const explosionFactor = Math.pow(Math.max(0, (offset - 0.8) * 5.0), 1.5)
+        // Explosion on final page (page 6: offset > 0.9)
+        const explosionFactor = Math.pow(Math.max(0, (offset - 0.9) * 10.0), 1.5)
 
         uniforms.uExplosion.value = THREE.MathUtils.lerp(uniforms.uExplosion.value, explosionFactor, 0.15)
         uniforms.uTime.value = state.clock.elapsedTime
 
-        // Color shifts to a white-hot magenta peak
-        if (offset > 0.8) {
+        // Color shifts across 6 pages
+        if (offset > 0.9) {
             uniforms.uColor.value.lerp(new THREE.Color('#ffffff'), 0.1)
         } else if (offset > 0.5) {
             uniforms.uColor.value.lerp(new THREE.Color('#ff00ff'), 0.05)

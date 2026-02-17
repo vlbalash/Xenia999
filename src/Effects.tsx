@@ -1,38 +1,21 @@
-import { EffectComposer, Bloom, Glitch, ChromaticAberration, Noise } from '@react-three/postprocessing'
-import { GlitchMode, BlendFunction } from 'postprocessing'
-import * as THREE from 'three'
-import { useState, useEffect } from 'react'
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 
-export default function Effects() {
-    const [glitchActive, setGlitchActive] = useState(false)
+// Define EffectsProps interface to match parent usage
+interface EffectsProps {
+    glitchActive?: boolean
+}
 
-    useEffect(() => {
-        const handleGlitchPeak = (e: any) => {
-            const intensity = e.detail?.intensity || 0.5
-
-            setGlitchActive(true)
-            window.dispatchEvent(new CustomEvent('play-ripple-sound'))
-
-            // Duration and strength based on audio intensity
-            const duration = 200 + intensity * 800
-            setTimeout(() => {
-                setGlitchActive(false)
-            }, duration)
-        }
-
-        window.addEventListener('audio-glitch-peak', handleGlitchPeak)
-        return () => window.removeEventListener('audio-glitch-peak', handleGlitchPeak)
-    }, [])
-
+export const Effects = ({ glitchActive: _ }: EffectsProps) => {
     return (
         <EffectComposer multisampling={0}>
             <Bloom
-                intensity={1.0}
-                luminanceThreshold={0.5}
+                intensity={0.5}
+                luminanceThreshold={0.8}
                 luminanceSmoothing={0.02}
             />
+            {/* 
             <Glitch
-                delay={new THREE.Vector2(0, 0)} // Handled by active prop
+                delay={new THREE.Vector2(0, 0)}
                 duration={new THREE.Vector2(0.5, 1.2)}
                 strength={new THREE.Vector2(0.3, 1.0)}
                 mode={GlitchMode.SPORADIC}
@@ -41,11 +24,13 @@ export default function Effects() {
             />
             <ChromaticAberration
                 blendFunction={BlendFunction.NORMAL}
-                offset={new THREE.Vector2(0.002, 0.002)}
+                offset={new THREE.Vector2(0.001, 0.001)} 
                 radialModulation={false}
                 modulationOffset={0}
             />
-            <Noise opacity={0.1} />
+            <Noise opacity={0.03} /> 
+            */}
+            <Vignette eskil={false} offset={0.1} darkness={0.6} />
         </EffectComposer>
     )
 }

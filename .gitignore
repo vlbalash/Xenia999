@@ -27,3 +27,6 @@ dist-ssr
 tsconfig.node.tsbuildinfo
 tsconfig.tsbuildinfo
 .vite
+
+# Local Netlify folder
+.netlify

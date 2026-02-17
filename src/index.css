@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background-color: #050505;
@@ -14,4 +15,48 @@ html, body {
 #root {
   width: 100%;
   height: 100%;
+}
+
+/* Hide native cursor — custom Crosshair component renders instead */
+*,
+canvas {
+  cursor: none !important;
+}
+
+/* Restore cursor for form inputs and links in the overlay */
+input,
+textarea,
+button,
+a,
+select,
+[role="button"] {
+  cursor: none !important;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes scanLine {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 0% 100%;
+  }
+
+  100% {
+    background-position: 0% 0%;
+  }
 }

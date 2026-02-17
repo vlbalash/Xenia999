@@ -2,44 +2,24 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Stars, Float, PerspectiveCamera } from '@react-three/drei'
 import NeuralCore from './NeuralCore'
-import ParticleExplosion from './ParticleExplosion'
 import * as THREE from 'three'
 import { useScroll } from '@react-three/drei'
-import Effects from './Effects'
+import { Effects } from './Effects'
 
 export default function Scene() {
     const scroll = useScroll()
     const cameraRef = useRef<THREE.Group>(null!)
 
     useFrame((state, delta) => {
-        // A simple rig that moves the camera based on scroll
-        // The content is 4 pages long.
-        // r1: 0-0.25 (Hero)
-        // r2: 0.25-0.5 (Growth)
-        // r3: 0.5-0.75 (Global)
-        // r4: 0.75-1.0 (CTA)
-
-        // Camera Logic (Example)
-        // Move camera Y position down as we scroll? 
-        // Or rotate around the center?
-
         // Rotate the entire camera group around 0,0,0
         const targetRotationY = -scroll.offset * (Math.PI * 2)
-        // Smooth damp
-        // state.camera.position.z ... ?
-        // easier: rotate a group holding the camera
+
         if (cameraRef.current) {
             cameraRef.current.rotation.y = THREE.MathUtils.damp(cameraRef.current.rotation.y, targetRotationY, 4, delta)
 
-            // Camera Shake on Explosion (last section)
-            if (scroll.offset > 0.85) {
-                const shake = (scroll.offset - 0.85) * 5.0
-                state.camera.position.x = (Math.random() - 0.5) * shake * 0.5
-                state.camera.position.y = (Math.random() - 0.5) * shake * 0.5
-            } else {
-                state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, 0, 0.1)
-                state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 0, 0.1)
-            }
+            // Subtle hover movement for camera
+            state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, Math.sin(state.clock.elapsedTime * 0.5) * 0.1, 0.1)
+            state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, Math.cos(state.clock.elapsedTime * 0.5) * 0.1, 0.1)
         }
     })
 
@@ -60,11 +40,10 @@ export default function Scene() {
                 <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
             </group>
 
-            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+            <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={0.5} />
 
             <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
                 <NeuralCore />
-                <ParticleExplosion />
             </Float>
             <Effects />
         </>
