@@ -5,8 +5,11 @@ import NeuralCore from './NeuralCore'
 import * as THREE from 'three'
 import { useScroll } from '@react-three/drei'
 import { Effects } from './Effects'
+import { Explosion } from './Explosion'
 
-export default function Scene() {
+import RedButton from './RedButton'
+
+export default function Scene({ glitchActive, toggleGlitch }: { glitchActive: boolean, toggleGlitch: () => void }) {
     const scroll = useScroll()
     const cameraRef = useRef<THREE.Group>(null!)
 
@@ -27,13 +30,14 @@ export default function Scene() {
         <>
             <color attach="background" args={['#050505']} />
 
-            {/* Lights */}
-            <ambientLight intensity={0.5} />
-            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} color="cyan" />
-            <pointLight position={[-10, -10, -10]} intensity={1} color="purple" />
+            {/* Lights - Refined for more drama */}
+            <ambientLight intensity={0.2} />
+            <spotLight position={[20, 20, 10]} angle={0.15} penumbra={1} intensity={2} color="#00ffff" castShadow />
+            <spotLight position={[-20, -10, -10]} angle={0.2} penumbra={1} intensity={1.5} color="#ec4899" />
+            <pointLight position={[0, 0, 0]} intensity={0.5} color="white" />
 
-            {/* Fog for depth */}
-            <fog attach="fog" args={['#050505', 5, 20]} />
+            {/* Fog for depth - tighter for more "atmosphere" */}
+            <fog attach="fog" args={['#050505', 3, 20]} />
 
             {/* Camera Rig Group */}
             <group ref={cameraRef}>
@@ -45,7 +49,9 @@ export default function Scene() {
             <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
                 <NeuralCore />
             </Float>
-            <Effects />
+            <RedButton active={glitchActive} onClick={toggleGlitch} />
+            <Explosion active={glitchActive} />
+            <Effects glitchActive={glitchActive} />
         </>
     )
 }

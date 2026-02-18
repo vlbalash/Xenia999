@@ -12,6 +12,7 @@ export default function Audio() {
     const sunoSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
     const analyserRef = useRef<AnalyserNode | null>(null)
     const dataArrayRef = useRef<Uint8Array | null>(null)
+    const rafIdRef = useRef<number | null>(null)
 
     const toggleMute = () => {
         if (!masterGainRef.current || !audioCtxRef.current) return
@@ -55,7 +56,7 @@ export default function Audio() {
 
         audio.play().catch(e => console.error("Suno audio playback failed:", e))
 
-        // Peak detection loop
+        // Peak detection loop — store rAF ID for cleanup
         let lastPeakTime = 0
         const checkPeaks = () => {
             if (!analyserRef.current || !dataArrayRef.current) return
@@ -79,7 +80,7 @@ export default function Audio() {
                 lastPeakTime = now
             }
 
-            requestAnimationFrame(checkPeaks)
+            rafIdRef.current = requestAnimationFrame(checkPeaks)
         }
         checkPeaks()
 
@@ -123,9 +124,61 @@ export default function Audio() {
         source.start(now)
     }
 
+    // Glass Break Sound Generator
+    const playGlassBreak = () => {
+        if (!audioCtxRef.current || isMuted) return
+        const ctx = audioCtxRef.current
+        const now = ctx.currentTime
+
+        // High frequency noise burst
+        const bufferSize = ctx.sampleRate * 0.5
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+        const data = buffer.getChannelData(0)
+
+        for (let i = 0; i < bufferSize; i++) {
+            // Exponential decay noise
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.1))
+        }
+
+        const source = ctx.createBufferSource()
+        source.buffer = buffer
+
+        const filter = ctx.createBiquadFilter()
+        filter.type = 'highpass'
+        filter.frequency.setValueAtTime(2000, now)
+        filter.frequency.linearRampToValueAtTime(1000, now + 0.1)
+
+        const gain = ctx.createGain()
+        gain.gain.setValueAtTime(0.3, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3)
+
+        source.connect(filter)
+        filter.connect(gain)
+        gain.connect(masterGainRef.current || ctx.destination)
+        source.start(now)
+
+        // Add a "ting" - sine wave ping
+        const osc = ctx.createOscillator()
+        const oscGain = ctx.createGain()
+
+        osc.frequency.setValueAtTime(3000 + Math.random() * 1000, now)
+        osc.type = 'sine'
+
+        oscGain.gain.setValueAtTime(0.1, now)
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3)
+
+        osc.connect(oscGain)
+        oscGain.connect(masterGainRef.current || ctx.destination)
+
+        osc.start(now)
+        osc.stop(now + 0.3)
+    }
+
     useEffect(() => {
         const handleRipple = () => playRippleSound()
+        const handleGlass = () => playGlassBreak()
         window.addEventListener('play-ripple-sound', handleRipple)
+        window.addEventListener('play-glass-break', handleGlass)
 
         // Old interaction sounds (keep for feedback)
         const handleInteraction = () => {
@@ -148,18 +201,28 @@ export default function Audio() {
 
         return () => {
             window.removeEventListener('play-ripple-sound', handleRipple)
+            window.removeEventListener('play-glass-break', handleGlass)
             window.removeEventListener('play-typing-sound', handleInteraction)
         }
     }, [isStarted, isMuted])
 
+    // Cleanup rAF on unmount
+    useEffect(() => {
+        return () => {
+            if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+            sunoAudioRef.current?.pause()
+            audioCtxRef.current?.close()
+        }
+    }, [])
+
     if (!isStarted) {
         return (
-            <div
-                className="fixed bottom-8 right-8 z-[100] cursor-pointer rounded-full bg-cyan-500/10 px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400 backdrop-blur-md outline outline-1 outline-cyan-500/50 transition-all hover:bg-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.2)]"
+            <button
+                className="fixed bottom-8 right-8 z-[100] cursor-pointer rounded-full bg-cyan-500/10 px-6 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-400 backdrop-blur-md outline outline-1 outline-cyan-500/50 transition-all hover:bg-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.2)] border-none"
                 onClick={startAudio}
             >
                 Initialize Neural Audio
-            </div>
+            </button>
         )
     }
 

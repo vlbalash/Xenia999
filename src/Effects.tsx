@@ -1,11 +1,13 @@
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Vignette, Noise, ChromaticAberration, Glitch } from '@react-three/postprocessing'
+import { BlendFunction, GlitchMode } from 'postprocessing'
+import * as THREE from 'three'
 
 // Define EffectsProps interface to match parent usage
 interface EffectsProps {
     glitchActive?: boolean
 }
 
-export const Effects = ({ glitchActive: _ }: EffectsProps) => {
+export const Effects = ({ glitchActive }: EffectsProps) => {
     return (
         <EffectComposer multisampling={0}>
             <Bloom
@@ -13,7 +15,6 @@ export const Effects = ({ glitchActive: _ }: EffectsProps) => {
                 luminanceThreshold={0.8}
                 luminanceSmoothing={0.02}
             />
-            {/* 
             <Glitch
                 delay={new THREE.Vector2(0, 0)}
                 duration={new THREE.Vector2(0.5, 1.2)}
@@ -24,12 +25,11 @@ export const Effects = ({ glitchActive: _ }: EffectsProps) => {
             />
             <ChromaticAberration
                 blendFunction={BlendFunction.NORMAL}
-                offset={new THREE.Vector2(0.001, 0.001)} 
+                offset={new THREE.Vector2(0.002, 0.002)}
                 radialModulation={false}
                 modulationOffset={0}
             />
-            <Noise opacity={0.03} /> 
-            */}
+            <Noise opacity={0.05} />
             <Vignette eskil={false} offset={0.1} darkness={0.6} />
         </EffectComposer>
     )
