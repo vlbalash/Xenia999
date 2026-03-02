@@ -76,8 +76,6 @@ export const Questionnaire = ({ onClose, isEmbedded = false }: QuestionnaireProp
 
     // Step 4: Dispatch
     const [isUrgent, setIsUrgent] = useState(false)
-    const [contact, setContact] = useState('')
-    const [isSending, setIsSending] = useState(false)
     const [sent, setSent] = useState(false)
     const [discountActive, setDiscountActive] = useState(false)
 
@@ -121,38 +119,13 @@ export const Questionnaire = ({ onClose, isEmbedded = false }: QuestionnaireProp
         setAiAddons(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item])
     }
 
-    const handleSend = async () => {
-        setIsSending(true)
-        try {
-            const message = [
-                `*New Project Request*`,
-                `Strategy: ${strategy} ($${PRICES.STRATEGIC[strategy]})`,
-                `Tech Stack: ${tech} ($${PRICES.TECH[tech]})`,
-                `Visual: ${brand} ($${PRICES.BRANDING[brand]})`,
-                `Growth: ${growthAddons.join(', ') || 'None'}`,
-                `AI: ${aiAddons.join(', ') || 'None'}`,
-                `Urgent: ${isUrgent ? 'YES' : 'NO'}`,
-                discountActive ? `Discount: 20% COMBAT BONUS applied` : '',
-                `*TOTAL: $${totalPrice}*`,
-                `Contact: ${contact}`
-            ].filter(Boolean).join('\n')
-
-            await fetch('/api/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: `Quote #${Math.floor(Math.random() * 10000)}`,
-                    email: contact,
-                    message: message
-                })
-            })
-            setSent(true)
-            setTimeout(() => onClose(), 5000)
-        } catch {
-            alert('Connection Error — try again')
-        } finally {
-            setIsSending(false)
-        }
+    const handleSend = () => {
+        // Build the query parameter with the encoded base loadout details
+        // In the future, the bot will parse this. For now, it just initializes the protocol.
+        const encodedLoadout = encodeURIComponent(`Loadout:[S:${strategy}|T:${tech}|V:${brand}|U:${isUrgent ? 'Y' : 'N'}]`);
+        window.open(`https://t.me/XXXENIA999?start=${encodedLoadout}`, '_blank');
+        setSent(true)
+        setTimeout(() => onClose(), 5000)
     }
 
     const nextStep = () => setStep(prev => prev + 1)
@@ -243,34 +216,36 @@ export const Questionnaire = ({ onClose, isEmbedded = false }: QuestionnaireProp
                             {step === 0 && (
                                 <div className="space-y-8">
                                     <p className={`text-base font-inter leading-relaxed ${isEmbedded ? 'text-stone-600' : 'text-gray-300'}`}>
-                                        I provide <span className={`font-bold font-soul text-xl mx-1 ${isEmbedded ? 'text-stone-900' : 'text-white'}`}>website development with soul</span>. From sleek landing pages to complex 3D portals, I focus on radical aesthetics and technical precision.
-                                        Transparent pricing, honest deadlines, no hidden fees.
+                                        We architect <span className={`font-bold font-orbitron text-cyan-600 italic text-xl mx-1`}>dominant digital environments</span>. From spatial WebGL interfaces to autonomous AI growth systems, we engineer experiences built exclusively for scale.
                                     </p>
 
                                     <div className="grid gap-4">
                                         {[
-                                            { icon: '⚡', title: 'Fast & precise', desc: 'Standard delivery 3–4 weeks. Urgent orders accepted with priority queue.' },
-                                            { icon: '💎', title: 'What you see is what you pay', desc: 'The calculator below builds your invoice live. You see every line item before committing.' },
-                                            { icon: '🎯', title: 'Shoot 999 targets — get 20% off', desc: 'Play the shooting gallery on this site. Reach 999 score and unlock a real discount.' }
+                                            { id: 'core', icon: 'I', title: 'The Core Protocol', desc: 'Custom WebGL landing experience, hyper-optimized performance, bespoke UI/UX architecture.', price: '$4k+' },
+                                            { id: 'nexus', icon: 'II', title: 'The Automation Nexus', desc: 'Core Protocol + Integrated AI agents, bespoke Telegram automated funnels, Notion CRM setups.', price: '$8k+' },
+                                            { id: 'vanguard', icon: 'III', title: 'Vanguard Retainer', desc: 'Automation Nexus + Ongoing A/B testing, UX strategy, monthly 3D asset expansion, Priority 24/7 SLA.', price: '$2k/mo' }
                                         ].map(item => (
-                                            <div key={item.icon} className={`flex gap-4 p-4 rounded-2xl border ${isEmbedded ? 'bg-white border-stone-100 shadow-sm' : 'bg-white/3 border-white/5'}`}>
-                                                <span className="text-2xl">{item.icon}</span>
-                                                <div>
-                                                    <p className={`font-orbitron font-bold text-[13px] tracking-wide ${isEmbedded ? 'text-stone-800' : 'text-white'}`}>{item.title}</p>
-                                                    <p className={`text-[12px] mt-1 font-inter leading-relaxed ${isEmbedded ? 'text-stone-500' : 'text-gray-500'}`}>{item.desc}</p>
+                                            <button 
+                                                key={item.id} 
+                                                onClick={() => window.open(`https://t.me/XXXENIA999?start=tier_${item.id}`, '_blank')}
+                                                className={`flex text-left gap-4 p-5 rounded-2xl border transition-all active:scale-95 group hover:-translate-y-1 ${isEmbedded ? 'bg-white border-stone-200 shadow-sm hover:border-cyan-400 hover:shadow-cyan-100' : 'bg-white/3 border-white/10 hover:border-cyan-400 hover:bg-cyan-900/20'}`}
+                                            >
+                                                <div className={`text-2xl font-orbitron font-black text-cyan-500 w-8 text-center pt-1 group-hover:scale-110 transition-transform`}>{item.icon}</div>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <h3 className={`font-orbitron font-bold text-sm tracking-wide ${isEmbedded ? 'text-stone-900' : 'text-white'}`}>{item.title}</h3>
+                                                        <span className={`font-mono text-xs font-bold ${isEmbedded ? 'text-cyan-600' : 'text-cyan-400'}`}>{item.price}</span>
+                                                    </div>
+                                                    <p className={`text-[12px] mt-2 font-inter leading-relaxed ${isEmbedded ? 'text-stone-500' : 'text-gray-400'}`}>{item.desc}</p>
                                                 </div>
-                                            </div>
+                                            </button>
                                         ))}
                                     </div>
 
-                                    <div className="pt-2">
-                                        <p className="text-gray-500 text-[10px] font-mono uppercase tracking-widest mb-4">Starting from <span className={isEmbedded ? 'text-cyan-600 font-bold' : 'text-white font-bold'}>$700</span> · Payment: fiat or crypto · NDA available</p>
-                                        <button
-                                            onClick={nextStep}
-                                            className={`w-full py-5 font-orbitron font-black tracking-[0.4em] rounded-xl transition-all active:scale-95 text-sm ${isEmbedded ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border border-cyan-200' : 'bg-cyan-400 text-black hover:bg-white'}`}
-                                        >
-                                            BEGIN MISSION →
-                                        </button>
+                                    <div className="pt-4 text-center">
+                                        <p className="text-gray-500 text-[10px] font-mono uppercase tracking-widest">
+                                            Select a tier to initialize secure Telegram connection
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -390,16 +365,10 @@ export const Questionnaire = ({ onClose, isEmbedded = false }: QuestionnaireProp
                                         </div>
                                     </div>
 
-                                    <div className="text-center pt-4">
-                                        <label htmlFor="contact-input" className="sr-only">Contact information</label>
-                                        <input
-                                            id="contact-input"
-                                            type="text"
-                                            value={contact}
-                                            onChange={(e) => setContact(e.target.value)}
-                                            placeholder="TELEGRAM @HANDLE OR EMAIL"
-                                            className={`w-full bg-transparent border-b py-4 text-center text-xl font-orbitron focus:outline-none focus:border-cyan-400 transition-all ${isEmbedded ? 'border-stone-300 text-stone-800 placeholder:text-stone-300' : 'border-white/20 text-white placeholder:text-white/20'}`}
-                                        />
+                                    <div className="text-center pt-4 pb-2">
+                                        <p className={`font-inter text-sm ${isEmbedded ? 'text-stone-500' : 'text-gray-400'}`}>
+                                            Secure dispatch via Telegram Protocol. The Lead Architect will receive your configuration.
+                                        </p>
                                     </div>
 
                                     <div className={`rounded-2xl p-6 border text-center ${isEmbedded ? 'bg-stone-50 border-stone-200' : 'bg-white/5 border-white/10'}`}>
@@ -416,8 +385,8 @@ export const Questionnaire = ({ onClose, isEmbedded = false }: QuestionnaireProp
                                         </p>
                                     </div>
 
-                                    <button onClick={handleSend} disabled={!contact || isSending} className={`w-full py-6 font-orbitron font-black tracking-[0.4em] rounded-xl transition-all disabled:opacity-20 active:scale-95 ${isEmbedded ? 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-md shadow-cyan-500/20' : 'bg-cyan-400 text-black hover:bg-white'}`}>
-                                        {isSending ? 'SENDING...' : 'DISPATCH REQUEST →'}
+                                    <button onClick={handleSend} className={`w-full py-6 font-orbitron font-black tracking-[0.4em] rounded-xl transition-all active:scale-95 ${isEmbedded ? 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-md shadow-cyan-500/20' : 'bg-cyan-400 text-black hover:bg-white'}`}>
+                                        INITIALIZE PROTOCOL →
                                     </button>
                                 </div>
                             )}
@@ -428,8 +397,8 @@ export const Questionnaire = ({ onClose, isEmbedded = false }: QuestionnaireProp
                                     <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-8 ${isEmbedded ? 'bg-cyan-50' : 'bg-cyan-500/10'}`}>
                                         <svg className={`w-10 h-10 ${isEmbedded ? 'text-cyan-500' : 'text-cyan-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                     </div>
-                                    <h2 className={`text-3xl font-orbitron font-bold mb-4 ${isEmbedded ? 'text-stone-800' : 'text-white'}`}>Request Sent!</h2>
-                                    <p className={`font-mono text-sm uppercase tracking-widest ${isEmbedded ? 'text-stone-500' : 'text-gray-400'}`}>I'll reach out within 24 hours</p>
+                                    <h2 className={`text-3xl font-orbitron font-bold mb-4 ${isEmbedded ? 'text-stone-800' : 'text-white'}`}>Protocol Initialized</h2>
+                                    <p className={`font-mono text-sm uppercase tracking-widest ${isEmbedded ? 'text-stone-500' : 'text-gray-400'}`}>Awaiting target connection in Telegram.</p>
                                 </motion.div>
                             )}
                         </motion.div>

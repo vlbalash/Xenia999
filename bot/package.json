@@ -1,0 +1,14 @@
+{
+  "name": "xxxenia999-vanguard-bot",
+  "version": "1.0.0",
+  "description": "Telegram Concierge Bot for XXXENIA999 Vanguard Protocol",
+  "main": "concierge.js",
+  "scripts": {
+    "start": "node concierge.js",
+    "dev": "node --watch concierge.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "telegraf": "^4.15.3"
+  }
+}

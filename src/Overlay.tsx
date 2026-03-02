@@ -88,7 +88,7 @@ export const Overlay = () => {
                             transition={{ delay: 0.5, duration: 0.8, ease: "backOut" }}
                             className="inline-block font-orbitron"
                         >
-                            999
+                            ENIA999
                         </motion.span>
                     </motion.h1>
 
@@ -98,7 +98,7 @@ export const Overlay = () => {
                         transition={{ delay: 0.2 }}
                     >
                         <div className="flex items-center justify-center whitespace-nowrap mb-2 h-10">
-                            <span className="relative z-10 bg-black/50 px-2 rounded">Website Development</span>
+                            <span className="relative z-10 bg-black/50 px-2 rounded">Digital Architecture</span>
                             <motion.div
                                 initial={{ width: 0, opacity: 0 }}
                                 animate={{ 
@@ -111,14 +111,14 @@ export const Overlay = () => {
                                 }}
                                 className="overflow-hidden inline-flex items-center"
                             >
-                                <span className="font-soul text-pink-500/90 italic lowercase text-2xl md:text-3xl tracking-normal inline-block ml-3 pr-2">
-                                    with soul
+                                <span className="font-orbitron text-cyan-400 italic lowercase text-sm md:text-base tracking-normal inline-block ml-3 pr-2">
+                                    & spatial UX
                                 </span>
                             </motion.div>
                         </div>
-                        <p>AI-Driven Interfaces</p>
+                        <p>Autonomous AI Systems</p>
                         <p className="font-inter text-xs md:text-sm text-gray-500 mt-6 tracking-[0.15em] font-light normal-case opacity-60">
-                            WebGL / Three.js / React Architecture
+                            v.4.0.0 // PROTOCOL INITIALIZED
                         </p>
                     </motion.div>
                     {/* Scroll hint */}
