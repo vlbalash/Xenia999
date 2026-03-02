@@ -1,5 +1,5 @@
-import { Scroll, useScroll } from '@react-three/drei'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Scroll } from '@react-three/drei'
+import { motion } from 'framer-motion'
 import { useState, MouseEvent, useEffect } from 'react'
 
 const fadeInUp = {
@@ -11,8 +11,7 @@ const fadeInUp = {
 
 export const Overlay = () => {
     const [shotPositions, setShotPositions] = useState<{ x: number, y: number, id: number }[]>([])
-    const [discountActive, setDiscountActive] = useState(false)
-    const scroll = useScroll()
+
     const [scrollOffset, setScrollOffset] = useState(0)
 
     useEffect(() => {
@@ -28,11 +27,7 @@ export const Overlay = () => {
 
     const BULLET_LIMIT = 3
 
-    useEffect(() => {
-        const handleDiscount = () => setDiscountActive(true)
-        window.addEventListener('discount-unlocked', handleDiscount)
-        return () => window.removeEventListener('discount-unlocked', handleDiscount)
-    }, [])
+
 
     const handleShootEnia = (e: MouseEvent<HTMLSpanElement>) => {
         if (shotPositions.length >= BULLET_LIMIT) return

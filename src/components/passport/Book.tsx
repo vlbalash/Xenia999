@@ -9,7 +9,7 @@ export const PassportBook = ({ onClose }: { onClose: () => void }) => {
         <PageIdentity key="identity" onNext={() => setPage(1)} />,
         <PageQuestionnaire key="questionnaire" onNext={() => setPage(2)} />,
         <PageClassification key="classification" onNext={() => setPage(3)} />,
-        <PageFinal key="final" />
+        <PageFinal key="final" tierOrServices="TBD" />
     ];
 
     return (
