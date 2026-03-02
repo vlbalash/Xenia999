@@ -1,51 +1,92 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// --- PRICING MATRIX (USD) ---
+// --- PRICING MATRIX (USD) — Enterprise Positioned ---
 const PRICES = {
-    TYPE: {
-        landing: 1500,
-        corp: 3500,
-        shop: 6000
-    },
-    DESIGN: {
-        template: 0,
-        unique: 1200,
-        premium: 3500
+    STRATEGIC: {
+        audit: 1200,
+        none: 0
     },
     TECH: {
-        px: 800,
-        content: 200,
-        seo: 500,
-        integration: 1500
+        template: 0,
+        headless: 2500,
+        custom: 3500
     },
-    ESOTERIC: {
-        fengshui: 1333,
-        runes: 999,
-        astro: 1111
+    GROWTH: {
+        cro: 1800
     },
-    URGENT_MULTIPLIER: 1.6
+    BRANDING: {
+        webgl_lite: 1500,
+        webgl_bespoke: 4000
+    },
+    AI: {
+        crm_routing: 1500
+    },
+    URGENT_MULTIPLIER: 1.5
 }
 
-type SiteType = 'landing' | 'corp' | 'shop'
-type DesignLevel = 'template' | 'unique' | 'premium'
-type TechAddon = 'px' | 'content' | 'seo' | 'integration'
-type EsotericAddon = 'fengshui' | 'runes' | 'astro'
+// --- DESCRIPTIONS: what each option includes ---
+const DESCRIPTIONS = {
+    STRATEGIC: {
+        audit: 'Deep-dive competitor analysis and architecture blueprinting before coding begins.',
+        none: 'Standard execution based on provided requirements.'
+    },
+    TECH: {
+        template: 'Polished premium layout customized with your brand colors & content.',
+        headless: 'Decoupled modern backend delivering content via ultra-fast APIs (Sanity/Contentful).',
+        custom: 'Fully custom layout designed and built from scratch — unique to your business.'
+    },
+    GROWTH: {
+        cro: 'Implementation of advanced analytics, dynamic heatmapping, and A/B split-testing infrastructure.'
+    },
+    BRANDING: {
+        webgl_lite: 'Subtle high-end 3D visual accents and micro-interactions.',
+        webgl_bespoke: 'Custom 3D shaders, interactive physics objects, and dynamic particle systems tailored to core brand values.'
+    },
+    AI: {
+        crm_routing: 'Intelligent lead capture that qualifies input via LLMs and routes instantly to Slack or HubSpot.'
+    }
+}
+
+type StrategyLevel = 'audit' | 'none'
+type TechLevel = 'template' | 'headless' | 'custom'
+type GrowthAddon = 'cro'
+type BrandLevel = 'webgl_lite' | 'webgl_bespoke'
+type AiAddon = 'crm_routing'
 
 interface QuestionnaireProps {
     onClose: () => void
+    isEmbedded?: boolean
 }
 
-export const Questionnaire = ({ onClose }: QuestionnaireProps) => {
-    const [step, setStep] = useState(1)
-    const [siteType, setSiteType] = useState<SiteType>('landing')
-    const [designLevel, setDesignLevel] = useState<DesignLevel>('unique')
-    const [techAddons, setTechAddons] = useState<TechAddon[]>([])
-    const [esotericAddons, setEsotericAddons] = useState<EsotericAddon[]>([])
+export const Questionnaire = ({ onClose, isEmbedded = false }: QuestionnaireProps) => {
+    const progressRef = useRef<HTMLDivElement>(null)
+    const [step, setStep] = useState(0)
+    
+    // Step 1: Strategy & Scale
+    const [strategy, setStrategy] = useState<StrategyLevel>('none')
+    
+    // Step 2: Architecture & Tech
+    const [tech, setTech] = useState<TechLevel>('template')
+    const [growthAddons, setGrowthAddons] = useState<GrowthAddon[]>([])
+    
+    // Step 3: Visual & AI Layer
+    const [brand, setBrand] = useState<BrandLevel>('webgl_lite')
+    const [aiAddons, setAiAddons] = useState<AiAddon[]>([])
+
+    // Step 4: Dispatch
     const [isUrgent, setIsUrgent] = useState(false)
     const [contact, setContact] = useState('')
     const [isSending, setIsSending] = useState(false)
     const [sent, setSent] = useState(false)
+    const [discountActive, setDiscountActive] = useState(false)
+
+    // Listen for discount unlock event from shooting gallery
+    useEffect(() => {
+        const handleDiscount = () => setDiscountActive(true)
+        window.addEventListener('discount-unlocked', handleDiscount)
+        return () => window.removeEventListener('discount-unlocked', handleDiscount)
+    }, [])
 
     // --- Escape key to close ---
     useEffect(() => {
@@ -56,41 +97,51 @@ export const Questionnaire = ({ onClose }: QuestionnaireProps) => {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [onClose])
 
+    // Update ARIA valuenow via ref to satisfy strict linters
+    useEffect(() => {
+        if (progressRef.current) {
+            progressRef.current.setAttribute('aria-valuenow', step.toString())
+        }
+    }, [step])
+
     // --- CALCULATION LOGIC ---
     const totalPrice = useMemo(() => {
-        let base = PRICES.TYPE[siteType] + PRICES.DESIGN[designLevel]
-        techAddons.forEach(a => base += PRICES.TECH[a])
-        esotericAddons.forEach(a => base += PRICES.ESOTERIC[a])
-        return Math.round(base * (isUrgent ? PRICES.URGENT_MULTIPLIER : 1))
-    }, [siteType, designLevel, techAddons, esotericAddons, isUrgent])
+        let base = PRICES.STRATEGIC[strategy] + PRICES.TECH[tech] + PRICES.BRANDING[brand]
+        growthAddons.forEach(a => base += PRICES.GROWTH[a])
+        aiAddons.forEach(a => base += PRICES.AI[a])
+        const afterUrgency = Math.round(base * (isUrgent ? PRICES.URGENT_MULTIPLIER : 1))
+        return discountActive ? Math.round(afterUrgency * 0.80) : afterUrgency
+    }, [strategy, tech, growthAddons, brand, aiAddons, isUrgent, discountActive])
 
-    const toggleTech = (item: TechAddon) => {
-        setTechAddons(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item])
+    const toggleGrowth = (item: GrowthAddon) => {
+        setGrowthAddons(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item])
     }
 
-    const toggleEsoteric = (item: EsotericAddon) => {
-        setEsotericAddons(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item])
+    const toggleAi = (item: AiAddon) => {
+        setAiAddons(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item])
     }
 
     const handleSend = async () => {
         setIsSending(true)
         try {
             const message = [
-                `*New Professional Invoice*`,
-                `Type: ${siteType} ($${PRICES.TYPE[siteType]})`,
-                `Design: ${designLevel} ($${PRICES.DESIGN[designLevel]})`,
-                `Tech: ${techAddons.join(', ') || 'None'}`,
-                `Esoteric: ${esotericAddons.join(', ') || 'None'}`,
+                `*New Project Request*`,
+                `Strategy: ${strategy} ($${PRICES.STRATEGIC[strategy]})`,
+                `Tech Stack: ${tech} ($${PRICES.TECH[tech]})`,
+                `Visual: ${brand} ($${PRICES.BRANDING[brand]})`,
+                `Growth: ${growthAddons.join(', ') || 'None'}`,
+                `AI: ${aiAddons.join(', ') || 'None'}`,
                 `Urgent: ${isUrgent ? 'YES' : 'NO'}`,
+                discountActive ? `Discount: 20% COMBAT BONUS applied` : '',
                 `*TOTAL: $${totalPrice}*`,
                 `Contact: ${contact}`
-            ].join('\n')
+            ].filter(Boolean).join('\n')
 
             await fetch('/api/contact', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: `Invoice #${Math.floor(Math.random() * 10000)}`,
+                    name: `Quote #${Math.floor(Math.random() * 10000)}`,
                     email: contact,
                     message: message
                 })
@@ -98,7 +149,7 @@ export const Questionnaire = ({ onClose }: QuestionnaireProps) => {
             setSent(true)
             setTimeout(() => onClose(), 5000)
         } catch {
-            alert('Protocol Connection Error')
+            alert('Connection Error — try again')
         } finally {
             setIsSending(false)
         }
@@ -107,48 +158,76 @@ export const Questionnaire = ({ onClose }: QuestionnaireProps) => {
     const nextStep = () => setStep(prev => prev + 1)
     const prevStep = () => setStep(prev => prev - 1)
 
-    const glassStyle = "glass-panel rounded-3xl p-8 md:p-12 max-w-2xl w-full shadow-2xl relative overflow-hidden overflow-y-auto max-h-[90vh] flex flex-col"
+    const containerStyle = isEmbedded
+        ? "relative w-full h-full flex flex-col pt-4"
+        : "fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl"
+
+    const glassStyle = isEmbedded
+        ? "flex-1 flex flex-col w-full h-full"
+        : "glass-panel rounded-3xl p-8 md:p-12 max-w-2xl w-full shadow-2xl relative overflow-hidden overflow-y-auto max-h-[90vh] flex flex-col"
 
     return (
         <motion.div
-            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl"
+            className={`${containerStyle} ${!isEmbedded ? 'questionnaire-window-bg' : ''}`}
             role="dialog"
             aria-modal="true"
             aria-label="Project Calculator"
-            style={{
-                backgroundImage: 'url(/questionnaire_bg.png)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundBlendMode: 'overlay'
-            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
         >
             <div className={glassStyle}>
-                {/* Header & Close */}
-                <div className="flex justify-between items-start mb-8">
-                    <div>
-                        <span className="text-[11px] font-orbitron font-bold tracking-[0.5em] text-cyan-400 uppercase">Identity Digital Sales</span>
-                        <h2 className="text-3xl font-orbitron font-black text-white mt-1">
-                            {step < 6 ? `Phase 0${step}` : "Secure Invoice"}
-                        </h2>
+                {/* Header & Close (only show if NOT embedded) */}
+                {!isEmbedded && (
+                    <div className="flex justify-between items-start mb-8">
+                        <div>
+                            <span className="text-[11px] font-orbitron font-bold tracking-[0.5em] text-cyan-400 uppercase">Interactive Configurator</span>
+                            <h2 className="text-3xl font-orbitron font-black text-white mt-1">
+                                {step === 0 ? 'Project Requirements' : step < 4 ? `Phase 0${step}` : "Configuration Complete"}
+                            </h2>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            aria-label="Close questionnaire"
+                            className="text-white/30 hover:text-white transition-colors p-2"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        aria-label="Close questionnaire"
-                        className="text-white/30 hover:text-white transition-colors p-2"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                </div>
+                )}
 
-                {/* Progress Bar */}
-                <div className="flex gap-2 mb-10" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={6} aria-label="Calculator progress">
-                    {[1, 2, 3, 4, 5, 6].map((s) => (
-                        <div key={s} className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= s ? 'bg-cyan-400 shadow-[0_0_10px_#00ffff]' : 'bg-white/5'}`} />
-                    ))}
-                </div>
+                {/* Progress Bar — only show after step 0 */}
+                {step > 0 && (
+                    <div 
+                        ref={progressRef}
+                        className="flex gap-2 mb-10" 
+                        role="progressbar" 
+                        aria-label={`Step ${step} of 6`}
+                    >
+
+
+
+
+                        {[1, 2, 3, 4].map((s) => (
+                            <div key={s} className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= s ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-stone-200'}`} />
+                        ))}
+                    </div>
+                )}
+
+                {/* Discount Banner */}
+                {discountActive && step > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-3 rounded-xl border border-yellow-400/30 bg-yellow-400/5 flex items-center gap-3"
+                    >
+                        <span className="text-yellow-400 text-lg">🎯</span>
+                        <div>
+                            <span className="text-yellow-400 font-orbitron font-bold text-[11px] tracking-widest">COMBAT BONUS ACTIVE</span>
+                            <p className="text-yellow-300/60 text-[10px] font-mono">Score 999 achieved — 20% discount applied to your invoice</p>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Content */}
                 <div className="flex-1">
@@ -160,92 +239,154 @@ export const Questionnaire = ({ onClose }: QuestionnaireProps) => {
                             exit={{ opacity: 0, x: -20 }}
                             className="space-y-6"
                         >
+                            {/* Step 0: Intro / Value Proposition */}
+                            {step === 0 && (
+                                <div className="space-y-8">
+                                    <p className={`text-base font-inter leading-relaxed ${isEmbedded ? 'text-stone-600' : 'text-gray-300'}`}>
+                                        I provide <span className={`font-bold font-soul text-xl mx-1 ${isEmbedded ? 'text-stone-900' : 'text-white'}`}>website development with soul</span>. From sleek landing pages to complex 3D portals, I focus on radical aesthetics and technical precision.
+                                        Transparent pricing, honest deadlines, no hidden fees.
+                                    </p>
+
+                                    <div className="grid gap-4">
+                                        {[
+                                            { icon: '⚡', title: 'Fast & precise', desc: 'Standard delivery 3–4 weeks. Urgent orders accepted with priority queue.' },
+                                            { icon: '💎', title: 'What you see is what you pay', desc: 'The calculator below builds your invoice live. You see every line item before committing.' },
+                                            { icon: '🎯', title: 'Shoot 999 targets — get 20% off', desc: 'Play the shooting gallery on this site. Reach 999 score and unlock a real discount.' }
+                                        ].map(item => (
+                                            <div key={item.icon} className={`flex gap-4 p-4 rounded-2xl border ${isEmbedded ? 'bg-white border-stone-100 shadow-sm' : 'bg-white/3 border-white/5'}`}>
+                                                <span className="text-2xl">{item.icon}</span>
+                                                <div>
+                                                    <p className={`font-orbitron font-bold text-[13px] tracking-wide ${isEmbedded ? 'text-stone-800' : 'text-white'}`}>{item.title}</p>
+                                                    <p className={`text-[12px] mt-1 font-inter leading-relaxed ${isEmbedded ? 'text-stone-500' : 'text-gray-500'}`}>{item.desc}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <p className="text-gray-500 text-[10px] font-mono uppercase tracking-widest mb-4">Starting from <span className={isEmbedded ? 'text-cyan-600 font-bold' : 'text-white font-bold'}>$700</span> · Payment: fiat or crypto · NDA available</p>
+                                        <button
+                                            onClick={nextStep}
+                                            className={`w-full py-5 font-orbitron font-black tracking-[0.4em] rounded-xl transition-all active:scale-95 text-sm ${isEmbedded ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border border-cyan-200' : 'bg-cyan-400 text-black hover:bg-white'}`}
+                                        >
+                                            BEGIN MISSION →
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Step 1: Base Type */}
                             {step === 1 && (
                                 <div className="space-y-4">
-                                    <p className="text-gray-400 text-sm font-inter">Select core digital architecture:</p>
+                                    <p className={`text-sm font-inter ${isEmbedded ? 'text-stone-500' : 'text-gray-400'}`}>Select primary project scope & strategy:</p>
                                     <div className="grid gap-3">
-                                        {(['landing', 'corp', 'shop'] as SiteType[]).map(t => (
-                                            <button key={t} onClick={() => { setSiteType(t); nextStep(); }} className={`text-left p-6 rounded-2xl border transition-all active:scale-95 ${siteType === t ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/5 bg-white/5 hover:border-white/20'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-orbitron font-bold uppercase tracking-widest text-[11px]">{t === 'landing' ? 'Landing Page' : t === 'corp' ? 'Corporate Portal' : 'E-Commerce'}</span>
-                                                    <span className="text-cyan-400 font-mono text-[11px]">${PRICES.TYPE[t]}</span>
+                                        {(['audit', 'none'] as StrategyLevel[]).map(s => (
+                                            <button key={s} onClick={() => { setStrategy(s); nextStep(); }} className={`text-left p-6 rounded-2xl border transition-all active:scale-95 ${strategy === s ? (isEmbedded ? 'border-cyan-400 bg-cyan-50 shadow-sm' : 'border-cyan-400 bg-cyan-400/10') : (isEmbedded ? 'border-stone-200 bg-white hover:border-stone-300 shadow-sm text-stone-700' : 'border-white/5 bg-white/5 hover:border-white/20 text-gray-300')}`}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className={`font-orbitron font-bold uppercase tracking-widest text-[11px] ${strategy === s && isEmbedded ? 'text-cyan-700' : ''}`}>{s === 'audit' ? 'Market Ecosystem & Technical Audit' : 'Standard Execution Plan'}</span>
+                                                    <span className={`${isEmbedded ? 'text-cyan-600' : 'text-cyan-400'} font-mono text-[13px] font-bold`}>{PRICES.STRATEGIC[s] === 0 ? 'Included' : `+ $${PRICES.STRATEGIC[s]}`}</span>
                                                 </div>
+                                                <p className={`text-[11px] font-inter leading-relaxed ${isEmbedded ? (strategy === s ? 'text-cyan-800/70' : 'text-stone-500') : 'text-gray-500'}`}>{DESCRIPTIONS.STRATEGIC[s]}</p>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 2: Design Level */}
+                            {/* Step 2: Architecture & Tech */}
                             {step === 2 && (
-                                <div className="space-y-4">
-                                    <p className="text-gray-400 text-sm font-inter">Define visual philosophy:</p>
-                                    <div className="grid gap-3">
-                                        {(['template', 'unique', 'premium'] as DesignLevel[]).map(l => (
-                                            <button key={l} onClick={() => { setDesignLevel(l); nextStep(); }} className={`text-left p-6 rounded-2xl border transition-all active:scale-95 ${designLevel === l ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/5 bg-white/5 hover:border-white/20'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-orbitron font-bold uppercase tracking-widest text-[11px]">{l}</span>
-                                                    <span className="text-cyan-400 font-mono text-[11px]">+{PRICES.DESIGN[l]}</span>
-                                                </div>
-                                                <p className="text-gray-500 text-[11px] mt-2 uppercase tracking-tight">
-                                                    {l === 'template' && "High-quality base with minor tweaks"}
-                                                    {l === 'unique' && "Custom layout from the ground up"}
-                                                    {l === 'premium' && "3D depth, complex animations & radical VFX"}
-                                                </p>
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        <p className={`text-sm font-inter font-semibold ${isEmbedded ? 'text-stone-600' : 'text-gray-300'}`}>Core Application Architecture:</p>
+                                        <div className="grid gap-3">
+                                            {(['template', 'headless', 'custom'] as TechLevel[]).map(t => (
+                                                <button key={t} onClick={() => setTech(t)} className={`text-left p-5 rounded-2xl border transition-all active:scale-95 ${tech === t ? (isEmbedded ? 'border-cyan-400 bg-cyan-50 shadow-sm' : 'border-cyan-400 bg-cyan-400/10') : (isEmbedded ? 'border-stone-200 bg-white hover:border-stone-300 shadow-sm text-stone-700' : 'border-white/5 bg-white/5 hover:border-white/20 text-gray-300')}`}>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className={`font-orbitron font-bold uppercase tracking-widest text-[11px] ${tech === t && isEmbedded ? 'text-cyan-700' : ''}`}>
+                                                            {t === 'template' ? 'Polished Template' : t === 'headless' ? 'Headless Serverless CMS' : 'Bespoke Application'}
+                                                        </span>
+                                                        <span className={`${isEmbedded ? 'text-cyan-600' : 'text-cyan-400'} font-mono text-[12px] font-bold`}>
+                                                            {PRICES.TECH[t] === 0 ? 'Included' : `+$${PRICES.TECH[t]}`}
+                                                        </span>
+                                                    </div>
+                                                    <p className={`text-[11px] font-inter leading-relaxed ${isEmbedded ? (tech === t ? 'text-cyan-800/70' : 'text-stone-500') : 'text-gray-500'}`}>{DESCRIPTIONS.TECH[t]}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        <p className={`text-sm font-inter font-semibold ${isEmbedded ? 'text-stone-600' : 'text-gray-300'}`}>Growth Engine (Optional):</p>
+                                        {(['cro'] as GrowthAddon[]).map(a => (
+                                            <button key={a} onClick={() => toggleGrowth(a)} className={`text-left p-5 rounded-2xl border transition-all active:scale-95 w-full ${growthAddons.includes(a) ? (isEmbedded ? 'border-amber-400 bg-amber-50 shadow-sm' : 'border-amber-400/50 bg-amber-400/5') : (isEmbedded ? 'border-stone-200 bg-white hover:border-stone-300 shadow-sm text-stone-700' : 'border-white/5 bg-white/5 hover:border-white/20 text-gray-300')}`}>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className={`font-orbitron font-bold uppercase tracking-widest text-[11px] ${growthAddons.includes(a) && isEmbedded ? 'text-amber-700' : (isEmbedded ? 'text-stone-600' : 'text-amber-200')}`}>
+                                                            Conversion Rate Optimization (CRO)
+                                                        </span>
+                                                        <span className={`${isEmbedded ? 'text-amber-600' : 'text-amber-400'} font-mono text-[12px] font-bold`}>+${PRICES.GROWTH[a]}</span>
+                                                    </div>
+                                                    <p className={`text-[11px] font-inter leading-relaxed ${isEmbedded ? (growthAddons.includes(a) ? 'text-amber-800/70' : 'text-stone-500') : 'text-gray-500'}`}>{DESCRIPTIONS.GROWTH[a]}</p>
                                             </button>
                                         ))}
                                     </div>
+                                    <button onClick={nextStep} className={`w-full py-4 mt-2 rounded-xl font-orbitron text-[11px] tracking-[0.3em] transition-all active:scale-95 ${isEmbedded ? 'border border-cyan-200 bg-cyan-50 text-cyan-600 hover:bg-cyan-100' : 'bg-white/10 hover:bg-white/20'}`}>CONFIRM STACK</button>
                                 </div>
                             )}
 
-                            {/* Step 3: Tech Add-ons */}
+                            {/* Step 3: Visual & AI Layer */}
                             {step === 3 && (
-                                <div className="space-y-4">
-                                    <p className="text-gray-400 text-sm font-inter">Enhance technical integrity:</p>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {(['px', 'content', 'seo', 'integration'] as TechAddon[]).map(a => (
-                                            <button key={a} onClick={() => toggleTech(a)} className={`p-5 rounded-2xl border transition-all text-center active:scale-95 ${techAddons.includes(a) ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/5 bg-white/5 hover:border-white/20'}`}>
-                                                <span className="font-orbitron font-bold uppercase tracking-widest text-[11px] block mb-2">{a === 'px' ? 'Pixel Perfect' : a === 'content' ? 'Full Content' : a === 'seo' ? 'SEO Master' : 'Integrations'}</span>
-                                                <span className="text-cyan-400 font-mono text-[11px]">+${PRICES.TECH[a]}</span>
-                                            </button>
-                                        ))}
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        <p className={`text-sm font-inter font-semibold ${isEmbedded ? 'text-stone-600' : 'text-gray-300'}`}>Visual Identity & Identity Design:</p>
+                                        <div className="grid gap-3">
+                                            {(['webgl_lite', 'webgl_bespoke'] as BrandLevel[]).map(l => (
+                                                <button key={l} onClick={() => setBrand(l)} className={`text-left p-5 rounded-2xl border transition-all active:scale-95 ${brand === l ? (isEmbedded ? 'border-cyan-400 bg-cyan-50 shadow-sm' : 'border-cyan-400 bg-cyan-400/10') : (isEmbedded ? 'border-stone-200 bg-white hover:border-stone-300 shadow-sm text-stone-700' : 'border-white/5 bg-white/5 hover:border-white/20 text-gray-300')}`}>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className={`font-orbitron font-bold uppercase tracking-widest text-[11px] ${brand === l && isEmbedded ? 'text-cyan-700' : ''}`}>
+                                                            {l === 'webgl_lite' ? 'Premium Identity' : 'Bespoke WebGL Identity'}
+                                                        </span>
+                                                        <span className={`${isEmbedded ? 'text-cyan-600' : 'text-cyan-400'} font-mono text-[12px] font-bold`}>
+                                                            +${PRICES.BRANDING[l]}
+                                                        </span>
+                                                    </div>
+                                                    <p className={`text-[11px] font-inter leading-relaxed ${isEmbedded ? (brand === l ? 'text-cyan-800/70' : 'text-stone-500') : 'text-gray-500'}`}>{DESCRIPTIONS.BRANDING[l]}</p>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <button onClick={nextStep} className="w-full py-4 mt-4 bg-white/10 rounded-xl font-orbitron text-[11px] tracking-[0.3em] hover:bg-white/20 active:scale-95 transition-all">CONFIRM TECH STACK</button>
-                                </div>
-                            )}
 
-                            {/* Step 4: Esoteric Add-ons */}
-                            {step === 4 && (
-                                <div className="space-y-4">
-                                    <p className="text-gray-400 text-sm font-inter">Establish brand harmony & energy:</p>
-                                    <div className="grid gap-3">
-                                        {(['fengshui', 'runes', 'astro'] as EsotericAddon[]).map(a => (
-                                            <button key={a} onClick={() => toggleEsoteric(a)} className={`text-left p-6 rounded-2xl border transition-all active:scale-95 ${esotericAddons.includes(a) ? 'border-amber-400/50 bg-amber-400/5' : 'border-white/5 bg-white/5 hover:border-white/20'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-orbitron font-bold uppercase tracking-widest text-[11px] text-amber-200">{a === 'fengshui' ? 'Web Feng-Shui' : a === 'runes' ? 'Runic Code Protection' : 'Astro-Numerology'}</span>
-                                                    <span className="text-amber-400 font-mono text-[11px]">(+${PRICES.ESOTERIC[a]})</span>
+                                    <div className="space-y-3">
+                                        <p className={`text-sm font-inter font-semibold ${isEmbedded ? 'text-stone-600' : 'text-gray-300'}`}>Automation & AI Infrastructure (Optional):</p>
+                                        {(['crm_routing'] as AiAddon[]).map(a => (
+                                            <button key={a} onClick={() => toggleAi(a)} className={`text-left p-6 rounded-2xl border transition-all active:scale-95 w-full ${aiAddons.includes(a) ? (isEmbedded ? 'border-purple-400 bg-purple-50 shadow-sm' : 'border-purple-400/50 bg-purple-400/5') : (isEmbedded ? 'border-stone-200 bg-white hover:border-stone-300 shadow-sm text-stone-700' : 'border-white/5 bg-white/5 hover:border-white/20 text-gray-300')}`}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className={`font-orbitron font-bold uppercase tracking-widest text-[11px] ${aiAddons.includes(a) && isEmbedded ? 'text-purple-700' : (isEmbedded ? 'text-stone-600' : 'text-purple-200')}`}>
+                                                        AI Lead Routing & CRM Sync
+                                                    </span>
+                                                    <span className={`${isEmbedded ? 'text-purple-600' : 'text-purple-400'} font-mono text-[12px] font-bold`}>+${PRICES.AI[a]}</span>
                                                 </div>
-                                                <p className="text-gray-500 text-[11px] mt-2 italic">
-                                                    {a === 'fengshui' && "Strategic grid & color balancing for perfect energy flow"}
-                                                    {a === 'runes' && "Embedding protective sigils into the code architecture"}
-                                                    {a === 'astro' && "Calculated launch timing & color-domain resonance"}
-                                                </p>
+                                                <p className={`text-[11px] font-inter leading-relaxed ${isEmbedded ? (aiAddons.includes(a) ? 'text-purple-800/70' : 'text-stone-500') : 'text-gray-500'}`}>{DESCRIPTIONS.AI[a]}</p>
                                             </button>
                                         ))}
                                     </div>
-                                    <button onClick={nextStep} className="w-full py-4 mt-2 border border-amber-400/20 text-amber-200 rounded-xl font-orbitron text-[11px] tracking-[0.3em] hover:bg-amber-400/5 transition-all active:scale-95">ESTABLISH HARMONY</button>
+                                    <button onClick={nextStep} className={`w-full py-4 mt-2 border rounded-xl font-orbitron text-[11px] tracking-[0.3em] transition-all active:scale-95 ${isEmbedded ? 'border-purple-200 text-purple-600 hover:bg-purple-50' : 'border-purple-400/20 text-purple-200 hover:bg-purple-400/5'}`}>ESTABLISH CORE</button>
                                 </div>
                             )}
 
-                            {/* Step 5: Timeline & Contact */}
-                            {step === 5 && (
+                            {/* Step 4: Timeline & Dispatch (formerly Step 5/6) */}
+                            {step === 4 && !sent && (
                                 <div className="space-y-8">
                                     <div className="space-y-4 text-center">
-                                        <p className="text-gray-400 text-sm">Select build velocity:</p>
+                                        <p className={`text-sm ${isEmbedded ? 'text-stone-500' : 'text-gray-400'}`}>Select delivery speed:</p>
                                         <div className="flex gap-4">
-                                            <button onClick={() => setIsUrgent(false)} className={`flex-1 p-4 rounded-xl border font-orbitron text-[11px] tracking-widest active:scale-95 transition-all ${!isUrgent ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/5'}`}>STANDARD (4W)</button>
-                                            <button onClick={() => setIsUrgent(true)} className={`flex-1 p-4 rounded-xl border font-orbitron text-[11px] tracking-widest active:scale-95 transition-all ${isUrgent ? 'border-red-400 bg-red-400/10' : 'border-white/5'}`}>URGENT (x1.6)</button>
+                                            <button onClick={() => setIsUrgent(false)} className={`flex-1 p-5 rounded-xl border font-orbitron active:scale-95 transition-all ${!isUrgent ? (isEmbedded ? 'border-cyan-400 bg-cyan-50 shadow-sm text-cyan-700' : 'border-cyan-400 bg-cyan-400/10 text-white') : (isEmbedded ? 'border-stone-200 bg-white text-stone-500 hover:border-stone-300' : 'border-white/5 text-gray-500')}`}>
+                                                <span className="text-[11px] tracking-widest block">STANDARD</span>
+                                                <span className={`text-[10px] mt-1 block font-inter ${!isUrgent && isEmbedded ? 'text-cyan-800/70' : 'opacity-70'}`}>3–4 weeks</span>
+                                            </button>
+                                            <button onClick={() => setIsUrgent(true)} className={`flex-1 p-5 rounded-xl border font-orbitron active:scale-95 transition-all ${isUrgent ? (isEmbedded ? 'border-red-400 bg-red-50 shadow-sm text-red-700' : 'border-red-400 bg-red-400/10 text-white') : (isEmbedded ? 'border-stone-200 bg-white text-stone-500 hover:border-stone-300' : 'border-white/5 text-gray-500')}`}>
+                                                <span className="text-[11px] tracking-widest block">URGENT</span>
+                                                <span className={`text-[10px] mt-1 block font-inter ${isUrgent && isEmbedded ? 'text-red-800/70' : 'opacity-70'}`}>+50% — 1–2 weeks</span>
+                                            </button>
                                         </div>
                                     </div>
 
@@ -257,56 +398,38 @@ export const Questionnaire = ({ onClose }: QuestionnaireProps) => {
                                             value={contact}
                                             onChange={(e) => setContact(e.target.value)}
                                             placeholder="TELEGRAM @HANDLE OR EMAIL"
-                                            className="w-full bg-transparent border-b border-white/20 py-4 text-center text-xl font-orbitron text-white focus:outline-none focus:border-cyan-400 transition-all placeholder:text-white/20"
+                                            className={`w-full bg-transparent border-b py-4 text-center text-xl font-orbitron focus:outline-none focus:border-cyan-400 transition-all ${isEmbedded ? 'border-stone-300 text-stone-800 placeholder:text-stone-300' : 'border-white/20 text-white placeholder:text-white/20'}`}
                                         />
                                     </div>
 
-                                    <button onClick={nextStep} disabled={!contact} className="w-full py-6 bg-cyan-400 text-black font-orbitron font-black tracking-[0.4em] rounded-xl hover:bg-white transition-all disabled:opacity-20 active:scale-95">GENERATE INVOICE</button>
+                                    <div className={`rounded-2xl p-6 border text-center ${isEmbedded ? 'bg-stone-50 border-stone-200' : 'bg-white/5 border-white/10'}`}>
+                                        <span className={`text-[11px] font-orbitron uppercase tracking-[0.3em] ${isEmbedded ? 'text-stone-500' : 'text-gray-500'}`}>Your Estimate</span>
+                                        <h3 className={`text-5xl font-orbitron font-black mt-2 ${isEmbedded ? 'text-stone-800' : 'text-white'}`}>
+                                            ${totalPrice.toLocaleString()}
+                                        </h3>
+                                        <p className={`text-[11px] mt-3 font-inter leading-relaxed ${isEmbedded ? 'text-stone-500' : 'text-gray-500'}`}>
+                                            Includes: {strategy === 'audit' ? 'Full Strategy' : 'Standard'} · {tech} architecture
+                                            {growthAddons.length > 0 && ` · CRO`}
+                                            {brand === 'webgl_bespoke' && ` · Bespoke WebGL`}
+                                            {aiAddons.length > 0 && ` · AI Routing`}
+                                            {isUrgent && ' · URGENT +50%'}
+                                        </p>
+                                    </div>
+
+                                    <button onClick={handleSend} disabled={!contact || isSending} className={`w-full py-6 font-orbitron font-black tracking-[0.4em] rounded-xl transition-all disabled:opacity-20 active:scale-95 ${isEmbedded ? 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-md shadow-cyan-500/20' : 'bg-cyan-400 text-black hover:bg-white'}`}>
+                                        {isSending ? 'SENDING...' : 'DISPATCH REQUEST →'}
+                                    </button>
                                 </div>
                             )}
 
-                            {/* Step 6: Payment / Requisites */}
-                            {step === 6 && !sent && (
-                                <div className="space-y-6">
-                                    <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center">
-                                        <span className="text-[11px] font-orbitron text-gray-500 uppercase tracking-[0.3em]">Estimated Total</span>
-                                        <h3 className="text-5xl font-orbitron font-black text-white mt-4">$ {totalPrice}</h3>
-                                        <p className="text-[11px] text-gray-500 mt-2 italic uppercase">Calculated with {isUrgent ? 'URGENT' : 'STANDARD'} priority</p>
-                                    </div>
-
-                                    <div className="grid gap-3">
-                                        <button
-                                            onClick={() => window.open('https://invoice.easystaff.io/cust_log?freel_id=1f0b7f2f-e0fe-6ac4-963a-83690f805e19', '_blank')}
-                                            className="w-full py-4 bg-white text-black font-orbitron font-bold tracking-widest rounded-xl hover:bg-cyan-400 transition-all flex justify-between px-8 items-center active:scale-95"
-                                        >
-                                            <span>FIAT INVOICE</span>
-                                            <span className="text-[11px] font-mono opacity-50">BY CARD/BANK</span>
-                                        </button>
-
-                                        <div className="p-6 rounded-2xl bg-black/40 border border-white/5 space-y-4">
-                                            <h4 className="text-[11px] font-orbitron font-bold text-gray-400 tracking-widest uppercase mb-2">Crypto Protocol</h4>
-                                            <div className="flex justify-between items-center font-mono text-[12px]">
-                                                <span className="text-gray-500">USDT (TRC20)</span>
-                                                <span className="text-white bg-white/5 px-2 py-1 rounded">TR7NHqDj...3Z</span>
-                                            </div>
-                                            <div className="flex justify-between items-center font-mono text-[12px]">
-                                                <span className="text-gray-500">BTC</span>
-                                                <span className="text-white bg-white/5 px-2 py-1 rounded">bc1qx8m...4p</span>
-                                            </div>
-                                            <button onClick={handleSend} disabled={isSending} className="w-full py-4 mt-2 border border-cyan-400/30 text-cyan-400 rounded-xl font-orbitron text-[11px] tracking-[0.3em] hover:bg-cyan-400/10 transition-all active:scale-95 disabled:opacity-50"> {isSending ? 'PROCESSING...' : 'ESTABLISH CONTACT & LOG'} </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Step Final: Sent */}
+                            {/* Final: Sent */}
                             {sent && (
                                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-20 flex flex-col items-center">
-                                    <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mb-8">
-                                        <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-8 ${isEmbedded ? 'bg-cyan-50' : 'bg-cyan-500/10'}`}>
+                                        <svg className={`w-10 h-10 ${isEmbedded ? 'text-cyan-500' : 'text-cyan-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                     </div>
-                                    <h2 className="text-3xl font-orbitron font-bold text-white mb-4">Transmission Successful</h2>
-                                    <p className="text-gray-400 font-mono text-sm uppercase tracking-widest">Awaiting Architect Verification</p>
+                                    <h2 className={`text-3xl font-orbitron font-bold mb-4 ${isEmbedded ? 'text-stone-800' : 'text-white'}`}>Request Sent!</h2>
+                                    <p className={`font-mono text-sm uppercase tracking-widest ${isEmbedded ? 'text-stone-500' : 'text-gray-400'}`}>I'll reach out within 24 hours</p>
                                 </motion.div>
                             )}
                         </motion.div>
@@ -314,9 +437,9 @@ export const Questionnaire = ({ onClose }: QuestionnaireProps) => {
                 </div>
 
                 {/* Footer Controls */}
-                {step > 1 && !sent && (
-                    <div className="flex justify-start border-t border-white/5 pt-6">
-                        <button onClick={prevStep} className="font-orbitron font-bold text-[11px] text-gray-500 hover:text-white transition-colors tracking-widest uppercase"> [ Back ] </button>
+                {step > 0 && !sent && (
+                    <div className={`flex justify-start border-t items-center ${isEmbedded ? 'border-stone-100 pt-6 mt-6' : 'border-white/5 pt-6'}`}>
+                        <button onClick={prevStep} className={`font-orbitron font-bold text-[11px] tracking-widest uppercase transition-colors ${isEmbedded ? 'text-stone-400 hover:text-stone-700' : 'text-gray-500 hover:text-white'}`}>[ ← Back ]</button>
                     </div>
                 )}
             </div>

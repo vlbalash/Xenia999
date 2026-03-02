@@ -1,112 +1,76 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+interface Spark {
+    id: number
+    angle: number
+    dist: number
+    size: number
+}
 
 interface Shot {
     id: number
     x: number
     y: number
-    sparks: { id: number, angle: number, dist: number, size: number }[]
+    sparks: Spark[]
 }
 
 export const GlassEffect = () => {
     const [shots, setShots] = useState<Shot[]>([])
     const audioCtxRef = useRef<AudioContext | null>(null)
 
-    // Reuse a single AudioContext
-    const getAudioCtx = useCallback(() => {
-        if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
-            audioCtxRef.current = new AudioContextClass()
-        }
-        if (audioCtxRef.current.state === 'suspended') {
-            audioCtxRef.current.resume()
+    const getAudioCtx = () => {
+        if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
         }
         return audioCtxRef.current
-    }, [])
+    }
+
+    const playGlassSound = () => {
+        const ctx = getAudioCtx()
+        if (ctx.state === 'suspended') ctx.resume()
+
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(800 + Math.random() * 400, ctx.currentTime)
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1)
+        
+        gain.gain.setValueAtTime(0.1, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
+        
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        
+        osc.start()
+        osc.stop(ctx.currentTime + 0.1)
+    }
 
     useEffect(() => {
-        let touchMoved = false
-
-        const handleTouchStart = () => { touchMoved = false }
-        const handleTouchMove = () => { touchMoved = true }
-
-        const handleClick = (e: MouseEvent) => {
-            const target = e.target as HTMLElement
-            if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="dialog"]')) return
-
-            const sparks = Array.from({ length: 12 }).map((_, i) => ({
-                id: i,
-                angle: (Math.PI * 2 / 12) * i + (Math.random() - 0.5) * 0.5,
-                dist: 30 + Math.random() * 60,
-                size: 1 + Math.random() * 3
+        const handleShoot = (e: Event) => {
+            const { x, y } = (e as CustomEvent).detail
+            const id = Date.now()
+            
+            const newSparks: Spark[] = Array.from({ length: 8 }).map((_, i) => ({
+                id: id + i,
+                angle: (i / 8) * Math.PI * 2 + (Math.random() - 0.5) * 0.5,
+                dist: 40 + Math.random() * 60,
+                size: 1 + Math.random() * 2
             }))
 
-            const newShot: Shot = {
-                id: Date.now(),
-                x: e.clientX,
-                y: e.clientY,
-                sparks
-            }
+            setShots(prev => [...prev, { id, x, y, sparks: newSparks }])
+            playGlassSound()
 
-            setShots(prev => [...prev.slice(-10), newShot])
-
-            // Muffled vacuum shot — reuse the single AudioContext
-            try {
-                const ctx = getAudioCtx()
-                const osc = ctx.createOscillator()
-                const gain = ctx.createGain()
-                osc.type = 'sine'
-                osc.frequency.setValueAtTime(120, ctx.currentTime)
-                osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.15)
-                gain.gain.setValueAtTime(0.4, ctx.currentTime)
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
-                osc.connect(gain).connect(ctx.destination)
-                osc.start(ctx.currentTime)
-                osc.stop(ctx.currentTime + 0.15)
-            } catch {
-                // Audio not available — silently skip
-            }
+            // Cleanup after animation
+            setTimeout(() => {
+                setShots(prev => prev.filter(s => s.id !== id))
+            }, 1000)
         }
 
-        const handleTouchEnd = (e: TouchEvent) => {
-            // Don't fire shot effects on scroll gestures
-            if (touchMoved) return
-            const touch = e.changedTouches[0]
-            if (!touch) return
-            const target = touch.target as HTMLElement
-            if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="dialog"]')) return
-
-            const sparks = Array.from({ length: 12 }).map((_, i) => ({
-                id: i,
-                angle: (Math.PI * 2 / 12) * i + (Math.random() - 0.5) * 0.5,
-                dist: 30 + Math.random() * 60,
-                size: 1 + Math.random() * 3
-            }))
-
-            setShots(prev => [...prev.slice(-10), {
-                id: Date.now(),
-                x: touch.clientX,
-                y: touch.clientY,
-                sparks
-            }])
-        }
-
-        window.addEventListener('mousedown', handleClick)
-        window.addEventListener('touchstart', handleTouchStart, { passive: true })
-        window.addEventListener('touchmove', handleTouchMove, { passive: true })
-        window.addEventListener('touchend', handleTouchEnd)
-
+        window.addEventListener('laser-shoot', handleShoot)
         return () => {
-            window.removeEventListener('mousedown', handleClick)
-            window.removeEventListener('touchstart', handleTouchStart)
-            window.removeEventListener('touchmove', handleTouchMove)
-            window.removeEventListener('touchend', handleTouchEnd)
-        }
-    }, [getAudioCtx])
-
-    // Cleanup AudioContext on unmount
-    useEffect(() => {
-        return () => {
+            window.removeEventListener('laser-shoot', handleShoot)
             audioCtxRef.current?.close()
         }
     }, [])
@@ -115,49 +79,31 @@ export const GlassEffect = () => {
         <div className="fixed inset-0 pointer-events-none z-[90] overflow-hidden">
             <AnimatePresence>
                 {shots.map((shot) => (
-                    <div
+                    <motion.div
                         key={shot.id}
-                        style={{
-                            position: 'absolute',
-                            left: shot.x,
-                            top: shot.y,
+                        className="shot-container"
+                        initial={{ x: shot.x, y: shot.y }}
+                        style={{ 
+                            // @ts-ignore
+                            '--shot-x': '0px', 
+                            // @ts-ignore
+                            '--shot-y': '0px'
                         }}
                     >
-                        {/* Bullet Hole — glowing ring that fades */}
                         <motion.div
                             initial={{ opacity: 1, scale: 0 }}
                             animate={{ opacity: 0, scale: 1.2 }}
                             transition={{ duration: 0.8, ease: 'easeOut' }}
-                            style={{
-                                position: 'absolute',
-                                top: -12,
-                                left: -12,
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                border: '2px solid rgba(0, 255, 255, 0.8)',
-                                boxShadow: '0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 8px rgba(0, 255, 255, 0.3)',
-                            }}
+                            className="bullet-hole"
                         />
 
-                        {/* Core flash */}
                         <motion.div
                             initial={{ opacity: 1, scale: 0 }}
                             animate={{ opacity: 0, scale: 2 }}
                             transition={{ duration: 0.3 }}
-                            style={{
-                                position: 'absolute',
-                                top: -4,
-                                left: -4,
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
-                                background: 'white',
-                                boxShadow: '0 0 30px white, 0 0 60px rgba(0,255,255,0.5)',
-                            }}
+                            className="flash-core"
                         />
 
-                        {/* Sparks — flying outward */}
                         {shot.sparks.map((spark) => (
                             <motion.div
                                 key={spark.id}
@@ -169,19 +115,18 @@ export const GlassEffect = () => {
                                     scale: 0
                                 }}
                                 transition={{ duration: 0.4 + Math.random() * 0.3, ease: 'easeOut' }}
+                                className="spark-particle"
                                 style={{
-                                    position: 'absolute',
-                                    top: -spark.size / 2,
-                                    left: -spark.size / 2,
-                                    width: spark.size,
-                                    height: spark.size,
-                                    borderRadius: '50%',
-                                    background: spark.id % 3 === 0 ? '#00ffff' : spark.id % 3 === 1 ? '#ffffff' : '#ec4899',
-                                    boxShadow: `0 0 6px ${spark.id % 2 === 0 ? '#00ffff' : '#ec4899'}`,
+                                    // @ts-ignore
+                                    '--spark-size': `${spark.size}px`,
+                                    // @ts-ignore
+                                    '--spark-color': spark.id % 3 === 0 ? '#00ffff' : spark.id % 3 === 1 ? '#ffffff' : '#ec4899',
+                                    // @ts-ignore
+                                    '--spark-glow': spark.id % 2 === 0 ? '#00ffff' : '#ec4899'
                                 }}
                             />
                         ))}
-                    </div>
+                    </motion.div>
                 ))}
             </AnimatePresence>
         </div>

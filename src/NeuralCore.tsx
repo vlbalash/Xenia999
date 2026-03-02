@@ -32,7 +32,7 @@ interface NeuralCoreProps {
 
 export default function NeuralCore({ envMap }: NeuralCoreProps) {
     const meshRef = useRef<THREE.Mesh>(null!)
-    const materialRef = useRef<any>(null!)
+    const materialRef = useRef<React.ElementRef<typeof MeshDistortMaterial>>(null!)
     const fresnelRef = useRef<THREE.ShaderMaterial>(null!)
     const innerRef = useRef<THREE.Mesh>(null!)
     const glowMeshRef = useRef<THREE.Mesh>(null!)
@@ -149,60 +149,6 @@ export default function NeuralCore({ envMap }: NeuralCoreProps) {
 
     return (
         <group>
-            {/* BLINDING inner neon RGB lights — explosive intensity */}
-            <pointLight
-                position={[0, 0, 0]}
-                color="#ff00ff"
-                intensity={10}
-                distance={6}
-                decay={1}
-            />
-            <pointLight
-                position={[0.3, -0.2, 0.3]}
-                color="#00ffff"
-                intensity={8}
-                distance={5}
-                decay={1}
-            />
-
-            <mesh ref={innerRef}>
-                <icosahedronGeometry args={[1, 5]} />
-                <meshBasicMaterial
-                    color="#ffccff"
-                    wireframe
-                    transparent
-                    opacity={0.5}
-                    blending={THREE.AdditiveBlending}
-                />
-            </mesh>
-
-            {/* Inner liquid-glass sphere — BRIGHT PLASMA */}
-            <mesh scale={0.7}>
-                <sphereGeometry args={[1, 32, 32]} />
-                <meshStandardMaterial
-                    color="#ffffff"
-                    emissive="#ff00ff"
-                    emissiveIntensity={4}
-                    metalness={1.0}
-                    roughness={0.0}
-                    transparent
-                    opacity={0.8}
-                    blending={THREE.AdditiveBlending}
-                    depthWrite={false}
-                />
-            </mesh>
-
-            {/* Secondary inner core — bright cyan wireframe */}
-            <mesh scale={0.5}>
-                <dodecahedronGeometry args={[1, 0]} />
-                <meshStandardMaterial
-                    color="#00ffff"
-                    emissive="#00ffff"
-                    emissiveIntensity={5}
-                    wireframe
-                />
-            </mesh>
-
             <Sphere args={[1, 64, 64]} ref={meshRef}>
                 <MeshDistortMaterial
                     ref={materialRef}

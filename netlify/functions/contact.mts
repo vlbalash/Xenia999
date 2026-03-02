@@ -1,6 +1,6 @@
-import type { Context, Config } from "@netlify/functions";
+import type { Config } from "@netlify/functions";
 
-export default async (req: Request, context: Context) => {
+export default async (req: Request) => {
     if (req.method !== "POST") {
         return new Response(JSON.stringify({ error: "Method not allowed" }), {
             status: 405,
@@ -19,10 +19,10 @@ export default async (req: Request, context: Context) => {
         }
 
         const BOT_TOKEN = Netlify.env.get("TELEGRAM_BOT_TOKEN");
-        const CHAT_ID = Netlify.env.get("TELEGRAM_CHAT_ID");
+        const CHAT_ID = "@XXXENIA999";
 
-        if (!BOT_TOKEN || !CHAT_ID) {
-            console.error("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID env vars");
+        if (!BOT_TOKEN) {
+            console.error("Missing TELEGRAM_BOT_TOKEN env var");
             return new Response(JSON.stringify({ error: "Server configuration error" }), {
                 status: 500,
                 headers: { "Content-Type": "application/json" },

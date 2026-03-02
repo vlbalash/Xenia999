@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 
 /**
  * Audio System - Integrated Suno Track & Procedural FX
@@ -21,10 +21,24 @@ export default function Audio() {
         setIsMuted(!isMuted)
     }
 
+    // Listen for external trigger from LeftTabPanel's audio button
+    useEffect(() => {
+        const onReqStart = () => startAudio()
+        const onReqMute = () => toggleMute()
+        window.addEventListener('request-audio-start', onReqStart)
+        window.addEventListener('request-audio-mute', onReqMute)
+        return () => {
+            window.removeEventListener('request-audio-start', onReqStart)
+            window.removeEventListener('request-audio-mute', onReqMute)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+
     const startAudio = () => {
         if (isStarted) return
 
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
         const ctx = new AudioContextClass()
         audioCtxRef.current = ctx
 
@@ -89,7 +103,7 @@ export default function Audio() {
     }
 
     // Ripple Sound Effect Generator
-    const playRippleSound = () => {
+    const playRippleSound = useCallback(() => {
         if (!audioCtxRef.current || isMuted) return
         const ctx = audioCtxRef.current
         const now = ctx.currentTime
@@ -122,10 +136,10 @@ export default function Audio() {
         gain.connect(masterGainRef.current || ctx.destination)
 
         source.start(now)
-    }
+    }, [isMuted])
 
     // Glass Break Sound Generator
-    const playGlassBreak = () => {
+    const playGlassBreak = useCallback(() => {
         if (!audioCtxRef.current || isMuted) return
         const ctx = audioCtxRef.current
         const now = ctx.currentTime
@@ -172,13 +186,295 @@ export default function Audio() {
 
         osc.start(now)
         osc.stop(now + 0.3)
-    }
+    }, [isMuted])
+
+    // --- Launch Whoosh (for gallery plates) ---
+    const playLaunchSound = useCallback(() => {
+        if (!audioCtxRef.current || isMuted) return
+        const ctx = audioCtxRef.current
+        const now = ctx.currentTime
+
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'triangle'
+        osc.frequency.setValueAtTime(100, now)
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.15)
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.4)
+
+        gain.gain.setValueAtTime(0, now)
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.05)
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4)
+
+        const filter = ctx.createBiquadFilter()
+        filter.type = 'lowpass'
+        filter.frequency.setValueAtTime(1200, now)
+
+        osc.connect(filter)
+        filter.connect(gain)
+        gain.connect(masterGainRef.current || ctx.destination)
+
+        osc.start(now)
+        osc.stop(now + 0.4)
+    }, [isMuted])
+
+    // --- Explosion Boom (deep procedural impact) ---
+    const playExplosionBoom = useCallback(() => {
+        if (!audioCtxRef.current || isMuted) return
+        const ctx = audioCtxRef.current
+        const now = ctx.currentTime
+
+        // Sub-bass kick — low sine sweep
+        const osc1 = ctx.createOscillator()
+        const osc1Gain = ctx.createGain()
+        osc1.type = 'sine'
+        osc1.frequency.setValueAtTime(80, now)
+        osc1.frequency.exponentialRampToValueAtTime(20, now + 1.2)
+        osc1Gain.gain.setValueAtTime(0.8, now)
+        osc1Gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5)
+        osc1.connect(osc1Gain)
+        osc1Gain.connect(masterGainRef.current || ctx.destination)
+        osc1.start(now)
+        osc1.stop(now + 1.5)
+
+        // White noise burst for the "crack"
+        const bufSize = ctx.sampleRate * 1.5
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate)
+        const data = buf.getChannelData(0)
+        for (let i = 0; i < bufSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.15))
+        }
+        const noiseSrc = ctx.createBufferSource()
+        noiseSrc.buffer = buf
+        const noiseFilter = ctx.createBiquadFilter()
+        noiseFilter.type = 'lowpass'
+        noiseFilter.frequency.setValueAtTime(1800, now)
+        noiseFilter.frequency.exponentialRampToValueAtTime(300, now + 1.2)
+        const noiseGain = ctx.createGain()
+        noiseGain.gain.setValueAtTime(0.5, now)
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5)
+        noiseSrc.connect(noiseFilter)
+        noiseFilter.connect(noiseGain)
+        noiseGain.connect(masterGainRef.current || ctx.destination)
+        noiseSrc.start(now)
+
+        // High shockwave tail (high-pass hiss fading)
+        const tailBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate)
+        const tailData = tailBuf.getChannelData(0)
+        for (let i = 0; i < bufSize; i++) {
+            tailData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.8))
+        }
+        const tailSrc = ctx.createBufferSource()
+        tailSrc.buffer = tailBuf
+        const tailFilter = ctx.createBiquadFilter()
+        tailFilter.type = 'highpass'
+        tailFilter.frequency.setValueAtTime(3000, now)
+        const tailGain = ctx.createGain()
+        tailGain.gain.setValueAtTime(0.15, now)
+        tailGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0)
+        tailSrc.connect(tailFilter)
+        tailFilter.connect(tailGain)
+        tailGain.connect(masterGainRef.current || ctx.destination)
+        tailSrc.start(now)
+    }, [isMuted])
+
+    // --- Liquid Splat (wet impact + drip sound) ---
+    const playLiquidSplat = useCallback(() => {
+        if (!audioCtxRef.current || isMuted) return
+        const ctx = audioCtxRef.current
+        const now = ctx.currentTime
+
+        // Sharp impact burst (the "splat")
+        const bufSize = ctx.sampleRate * 0.15
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate)
+        const data = buf.getChannelData(0)
+        for (let i = 0; i < bufSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.02))
+        }
+        const splatSrc = ctx.createBufferSource()
+        splatSrc.buffer = buf
+        const splatFilter = ctx.createBiquadFilter()
+        splatFilter.type = 'bandpass'
+        splatFilter.frequency.setValueAtTime(600, now)
+        splatFilter.Q.value = 0.8
+        const splatGain = ctx.createGain()
+        splatGain.gain.setValueAtTime(0.4, now)
+        splatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15)
+        splatSrc.connect(splatFilter)
+        splatFilter.connect(splatGain)
+        splatGain.connect(masterGainRef.current || ctx.destination)
+        splatSrc.start(now)
+
+        // Slow wet drip tones (randon pings staggered in time)
+        for (let d = 0; d < 6; d++) {
+            const delay = 0.1 + d * (0.2 + Math.random() * 0.4)
+            const freq = 300 + Math.random() * 400
+            const drOsc = ctx.createOscillator()
+            const drGain = ctx.createGain()
+            drOsc.type = 'sine'
+            drOsc.frequency.setValueAtTime(freq, now + delay)
+            drOsc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + delay + 0.3)
+            drGain.gain.setValueAtTime(0, now + delay)
+            drGain.gain.linearRampToValueAtTime(0.06, now + delay + 0.01)
+            drGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.4)
+            drOsc.connect(drGain)
+            drGain.connect(masterGainRef.current || ctx.destination)
+            drOsc.start(now + delay)
+            drOsc.stop(now + delay + 0.5)
+        }
+    }, [isMuted])
 
     useEffect(() => {
         const handleRipple = () => playRippleSound()
         const handleGlass = () => playGlassBreak()
+        const handleExplosion = () => playExplosionBoom()
+        const handleSplat = () => playLiquidSplat()
+        const handleLaunch = () => playLaunchSound()
+
+        // ── Charge whine — rising oscillator while holding ───────────
+        let chargeOsc: OscillatorNode | null = null
+        let chargeGain: GainNode | null = null
+
+        const handleChargeStart = () => {
+            if (!audioCtxRef.current || isMuted) return
+            // Already charging
+            if (chargeOsc) return
+            const ctx = audioCtxRef.current
+            const now = ctx.currentTime
+
+            chargeOsc = ctx.createOscillator()
+            chargeGain = ctx.createGain()
+
+            chargeOsc.type = 'sawtooth'
+            // Start low, ramp up to high over 1.5 s
+            chargeOsc.frequency.setValueAtTime(280, now)
+            chargeOsc.frequency.linearRampToValueAtTime(2400, now + 1.5)
+
+            chargeGain.gain.setValueAtTime(0, now)
+            chargeGain.gain.linearRampToValueAtTime(0.08, now + 0.05)
+
+            chargeOsc.connect(chargeGain)
+            chargeGain.connect(masterGainRef.current || ctx.destination)
+            chargeOsc.start(now)
+        }
+
+        const handleChargeStop = () => {
+            if (chargeOsc) {
+                try {
+                    chargeGain?.gain.setValueAtTime(chargeGain.gain.value, audioCtxRef.current!.currentTime)
+                    chargeGain?.gain.linearRampToValueAtTime(0, audioCtxRef.current!.currentTime + 0.04)
+                    chargeOsc.stop(audioCtxRef.current!.currentTime + 0.05)
+                } catch (_) { /* already stopped */ }
+                chargeOsc = null
+                chargeGain = null
+            }
+        }
+
+
+        const handlePlasmaShot = (e?: Event) => {
+            if (!audioCtxRef.current || isMuted) return
+            const charge = (e as CustomEvent)?.detail?.charge ?? 1
+            const ctx = audioCtxRef.current
+            const now = ctx.currentTime
+            const osc = ctx.createOscillator()
+            const g = ctx.createGain()
+            osc.type = 'sawtooth'
+            const baseFreq = 1200 + charge * 800
+            osc.frequency.setValueAtTime(baseFreq, now)
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.12 + charge * 0.06)
+            g.gain.setValueAtTime(0.18 + charge * 0.12, now)
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.18 + charge * 0.08)
+            osc.connect(g)
+            g.connect(masterGainRef.current || ctx.destination)
+            osc.start(now)
+            osc.stop(now + 0.3)
+        }
+
+        // ── Plasma break (impact + glass scatter) ───────────────────
+        const handlePlasmaBreak = () => {
+            playGlassBreak()
+            if (!audioCtxRef.current || isMuted) return
+            const ctx = audioCtxRef.current
+            const now = ctx.currentTime
+            const osc = ctx.createOscillator()
+            const g = ctx.createGain()
+            osc.type = 'sine'
+            osc.frequency.setValueAtTime(600, now)
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.2)
+            g.gain.setValueAtTime(0.2, now)
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.2)
+            osc.connect(g)
+            g.connect(masterGainRef.current || ctx.destination)
+            osc.start(now)
+            osc.stop(now + 0.2)
+        }
+
+        // ── Dry click (no ammo) ──────────────────────────────────────
+        const handleDryFire = () => {
+            if (!audioCtxRef.current || isMuted) return
+            const ctx = audioCtxRef.current
+            const now = ctx.currentTime
+            const osc = ctx.createOscillator()
+            const g = ctx.createGain()
+            osc.type = 'square'
+            osc.frequency.setValueAtTime(120, now)
+            g.gain.setValueAtTime(0.05, now)
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.05)
+            osc.connect(g)
+            g.connect(masterGainRef.current || ctx.destination)
+            osc.start(now)
+            osc.stop(now + 0.05)
+        }
+
         window.addEventListener('play-ripple-sound', handleRipple)
         window.addEventListener('play-glass-break', handleGlass)
+        window.addEventListener('play-explosion-boom', handleExplosion)
+        window.addEventListener('liquid-splash', handleSplat)
+        window.addEventListener('play-launch-sound', handleLaunch)
+        window.addEventListener('play-plasma-shot', handlePlasmaShot)
+        window.addEventListener('play-plasma-break', handlePlasmaBreak)
+        window.addEventListener('play-dry-fire', handleDryFire)
+        window.addEventListener('play-charge-start', handleChargeStart)
+        window.addEventListener('play-charge-stop', handleChargeStop)
+
+        // ── Reload sound — mechanical clunk + rising chirps ──────────
+        const handleReload = () => {
+            if (!audioCtxRef.current || isMuted) return
+            const ctx = audioCtxRef.current
+            const now = ctx.currentTime
+            // Deep thunk: noise burst
+            const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate)
+            const d = buf.getChannelData(0)
+            for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 2
+            const noise = ctx.createBufferSource()
+            noise.buffer = buf
+            const noiseFilter = ctx.createBiquadFilter()
+            noiseFilter.type = 'lowpass'
+            noiseFilter.frequency.value = 800
+            const noiseGain = ctx.createGain()
+            noiseGain.gain.setValueAtTime(0.25, now)
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12)
+            noise.connect(noiseFilter)
+            noiseFilter.connect(noiseGain)
+            noiseGain.connect(masterGainRef.current || ctx.destination)
+            noise.start(now)
+            // Rising chirps (6 = ammo count)
+            for (let i = 0; i < 6; i++) {
+                const t = now + 0.15 + i * 0.08
+                const o = ctx.createOscillator()
+                const g = ctx.createGain()
+                o.type = 'square'
+                o.frequency.setValueAtTime(600 + i * 150, t)
+                o.frequency.exponentialRampToValueAtTime(1000 + i * 200, t + 0.04)
+                g.gain.setValueAtTime(0.06, t)
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.05)
+                o.connect(g)
+                g.connect(masterGainRef.current || ctx.destination)
+                o.start(t)
+                o.stop(t + 0.06)
+            }
+        }
+        window.addEventListener('play-reload', handleReload)
+
 
         // Old interaction sounds (keep for feedback)
         const handleInteraction = () => {
@@ -202,9 +498,19 @@ export default function Audio() {
         return () => {
             window.removeEventListener('play-ripple-sound', handleRipple)
             window.removeEventListener('play-glass-break', handleGlass)
+            window.removeEventListener('play-explosion-boom', handleExplosion)
+            window.removeEventListener('liquid-splash', handleSplat)
+            window.removeEventListener('play-launch-sound', handleLaunch)
+            window.removeEventListener('play-plasma-shot', handlePlasmaShot)
+            window.removeEventListener('play-plasma-break', handlePlasmaBreak)
+            window.removeEventListener('play-dry-fire', handleDryFire)
+            window.removeEventListener('play-charge-start', handleChargeStart)
+            window.removeEventListener('play-charge-stop', handleChargeStop)
             window.removeEventListener('play-typing-sound', handleInteraction)
+            // Make sure the charge whine always stops on cleanup
+            handleChargeStop()
         }
-    }, [isStarted, isMuted])
+    }, [isStarted, isMuted, playExplosionBoom, playGlassBreak, playLiquidSplat, playRippleSound])
 
     // Cleanup rAF on unmount
     useEffect(() => {
@@ -215,29 +521,7 @@ export default function Audio() {
         }
     }, [])
 
-    if (!isStarted) {
-        return (
-            <button
-                className="fixed bottom-8 right-8 z-[100] cursor-pointer rounded-full bg-cyan-500/10 px-6 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-400 backdrop-blur-md outline outline-1 outline-cyan-500/50 transition-all hover:bg-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.2)] border-none"
-                onClick={startAudio}
-            >
-                Initialize Neural Audio
-            </button>
-        )
-    }
-
-    return (
-        <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end gap-2">
-            <div className="text-[8px] uppercase tracking-[0.3em] text-cyan-500/40 animate-pulse">
-                Neural Stream Active
-            </div>
-            <button
-                onClick={toggleMute}
-                className="group flex items-center gap-3 rounded-full bg-black/40 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all"
-            >
-                <div className={`h-1.5 w-1.5 rounded-full ${isMuted ? 'bg-red-500' : 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]'}`} />
-                {isMuted ? 'Muted' : 'Live'}
-            </button>
-        </div>
-    )
+    // This component is now purely a headless controller.
+    // UI is handled by the dedicated AudioButton component.
+    return null
 }
