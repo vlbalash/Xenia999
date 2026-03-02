@@ -159,62 +159,100 @@ export const Logbook = () => {
                                 </button>
                             </div>
 
-                            {/* Dashboard Body (Two Columns) */}
-                            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                                {/* NEW 11/10 Dashboard Body (Bento Box Layout) */}
+                            <div className="flex-1 overflow-hidden relative p-4 md:p-8 bg-gradient-to-br from-stone-50 via-gray-50 to-stone-100">
                                 
-                                {/* LEFT COLUMN: Context & Intelligence */}
-                                <div className="w-full md:w-[350px] flex-none bg-stone-50 border-r border-stone-200 p-6 md:p-8 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+                                {/* Animated Ambient Background Mesh (Subtle) */}
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
+                                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-200/40 blur-[100px] mix-blend-multiply animate-blob rounded-full" />
+                                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-200/40 blur-[100px] mix-blend-multiply animate-blob animation-delay-2000 rounded-full" />
+                                    <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-purple-200/40 blur-[100px] mix-blend-multiply animate-blob animation-delay-4000 rounded-full" />
+                                </div>
+
+                                <div className="relative z-10 w-full h-full flex flex-col md:flex-row gap-6 max-w-7xl mx-auto">
                                     
-                                    {/* System Protocol Status */}
-                                    <div className="bg-white rounded-xl border border-stone-200 p-5 shadow-sm">
-                                        <h3 className="text-xs font-orbitron font-bold text-stone-800 uppercase tracking-widest mb-4">Protocol Status</h3>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full bg-green-500/20 flex items-center justify-center">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                            </div>
-                                            <span className="text-sm font-inter text-stone-600 font-medium">Awaiting Vanguard Input</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Combat Bonus Widget */}
-                                    <div className={`rounded-xl border p-5 shadow-sm transition-all duration-500 ${combatUnlocked ? 'bg-cyan-50 border-cyan-200' : 'bg-stone-100 border-stone-200 opacity-60'}`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className={`text-[10px] font-orbitron font-bold uppercase tracking-widest ${combatUnlocked ? 'text-cyan-700' : 'text-stone-500'}`}>Combat Bonus</h3>
-                                            {combatUnlocked && <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-100 text-cyan-700 tracking-wider">ACTIVE</span>}
-                                        </div>
-                                        <h4 className={`text-xl font-orbitron font-black mb-1 ${combatUnlocked ? 'text-cyan-600' : 'text-stone-400'}`}>-20% DISCOUNT</h4>
-                                        <p className={`text-xs font-inter leading-relaxed ${combatUnlocked ? 'text-cyan-800/70' : 'text-stone-500'}`}>
-                                            {combatUnlocked ? 'Tactical engagement detected. Premium services discount currently applied to final quote.' : 'Neutralize targets in the void to unlock premium integration discounts.'}
-                                        </p>
-                                    </div>
-
-                                    {/* Strategic Insights */}
-                                    <RotatingInsights />
-
-                                    {/* System Logs */}
-                                    <div className="mt-auto pt-6 border-t border-stone-200">
-                                        <h3 className="text-[10px] font-orbitron font-bold text-stone-400 uppercase tracking-widest mb-4">Action Log</h3>
-                                        <div className="space-y-4 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                                            {logs.slice(0, 5).map((log, i) => (
-                                                <div key={i} className="flex gap-3">
-                                                    <span className="text-[10px] font-mono text-stone-400 whitespace-nowrap">{log.date}</span>
-                                                    <div>
-                                                        <p className="text-xs font-inter font-medium text-stone-700 line-clamp-1">{log.title}</p>
-                                                        <p className="text-[10px] font-inter text-stone-500 line-clamp-2 mt-0.5">{log.content}</p>
-                                                    </div>
+                                    {/* LEFT COLUMN: Intelligence & Status (Bento Grid) */}
+                                    <div className="w-full md:w-[380px] flex-none flex flex-col gap-6 overflow-y-auto custom-scrollbar pb-8">
+                                        
+                                        {/* Widget 1: System Protocol Status */}
+                                        <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-400/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            <h3 className="text-[10px] font-orbitron font-bold text-stone-400 uppercase tracking-[0.2em] mb-4">Protocol Status</h3>
+                                            <div className="flex items-center gap-4">
+                                                <div className="relative flex items-center justify-center w-4 h-4">
+                                                    <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-20 animate-ping"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                                                 </div>
-                                            ))}
+                                                <span className="text-sm font-inter text-stone-700 font-medium tracking-wide">Awaiting Vanguard Input</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Widget 2: Combat Bonus (Holographic Card) */}
+                                        <div className={`rounded-3xl border p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-700 relative overflow-hidden group ${combatUnlocked ? 'bg-gradient-to-br from-white/90 to-cyan-50/90 border-cyan-200/60' : 'bg-white/60 border-white/40 opacity-70'}`}>
+                                            {combatUnlocked && (
+                                                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400/5 via-transparent to-blue-400/5 animate-pulse-slow pointer-events-none" />
+                                            )}
+                                            <div className="flex justify-between items-start mb-3 relative z-10">
+                                                <h3 className={`text-[10px] font-orbitron font-bold uppercase tracking-[0.2em] ${combatUnlocked ? 'text-cyan-600' : 'text-stone-400'}`}>Combat Bonus</h3>
+                                                {combatUnlocked && (
+                                                    <motion.span 
+                                                        initial={{ scale: 0.8, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        className="px-2.5 py-1 rounded-md text-[9px] font-mono font-bold bg-cyan-100/80 text-cyan-700 tracking-[0.15em] border border-cyan-200/50 shadow-sm"
+                                                    >
+                                                        ACTIVE
+                                                    </motion.span>
+                                                )}
+                                            </div>
+                                            <h4 className={`text-2xl font-orbitron font-black mb-2 relative z-10 tracking-tight ${combatUnlocked ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600' : 'text-stone-400'}`}>
+                                                -20% DISCOUNT
+                                            </h4>
+                                            <p className={`text-xs font-inter leading-relaxed relative z-10 ${combatUnlocked ? 'text-cyan-800/80' : 'text-stone-500'}`}>
+                                                {combatUnlocked ? 'Tactical engagement authorized. Premium tier discount securely applied to terminal quote.' : 'Neutralize void anomalies to authorize premium integration discounts.'}
+                                            </p>
+                                        </div>
+
+                                        {/* Widget 3: Strategic Insights */}
+                                        <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+                                            <RotatingInsights />
+                                        </div>
+
+                                        {/* Widget 4: System Logs */}
+                                        <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col min-h-[220px]">
+                                            <div className="flex items-center justify-between mb-5">
+                                                <h3 className="text-[10px] font-orbitron font-bold text-stone-400 uppercase tracking-[0.2em]">Live Action Log</h3>
+                                                <div className="w-1.5 h-1.5 rounded-full bg-stone-300 animate-pulse" />
+                                            </div>
+                                            <div className="space-y-4 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                                <AnimatePresence initial={false}>
+                                                    {logs.slice(0, 5).map((log, i) => (
+                                                        <motion.div 
+                                                            key={log.id}
+                                                            initial={{ opacity: 0, x: -10 }}
+                                                            animate={{ opacity: 1 - i * 0.15, x: 0 }}
+                                                            className="flex gap-4 group"
+                                                        >
+                                                            <span className={`text-[10px] font-mono whitespace-nowrap pt-0.5 text-[${log.color}] opacity-70`}>{log.date}</span>
+                                                            <div>
+                                                                <p className="text-xs font-inter font-semibold text-stone-700 leading-tight group-hover:text-stone-900 transition-colors">{log.title}</p>
+                                                                <p className="text-[10px] font-inter text-stone-500 leading-snug mt-1">{log.content}</p>
+                                                            </div>
+                                                        </motion.div>
+                                                    ))}
+                                                </AnimatePresence>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* RIGHT COLUMN: Action & Configuration */}
-                                <div className="flex-1 bg-white p-6 md:p-10 overflow-y-auto custom-scrollbar relative">
-                                    <div className="max-w-3xl mx-auto">
-                                        <Questionnaire onClose={() => setIsOpen(false)} isEmbedded />
+                                    {/* RIGHT COLUMN: Action & Configuration (Main App Area) */}
+                                    <div className="flex-1 bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/60 shadow-[0_8px_40px_rgb(0,0,0,0.06)] p-6 md:p-10 overflow-y-auto custom-scrollbar relative flex flex-col">
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-cyan-100/40 to-transparent rounded-tr-[32px] pointer-events-none" />
+                                        <div className="max-w-3xl mx-auto w-full relative z-10 flex-1">
+                                            <Questionnaire onClose={() => setIsOpen(false)} isEmbedded />
+                                        </div>
                                     </div>
-                                </div>
 
+                                </div>
                             </div>
                         </div>
                     </motion.div>
