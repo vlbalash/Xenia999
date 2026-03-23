@@ -1,7 +1,9 @@
-import { EffectComposer, Bloom, Glitch, ChromaticAberration, Noise } from '@react-three/postprocessing'
-import { GlitchMode, BlendFunction } from 'postprocessing'
+import { EffectComposer, Bloom, Glitch, Vignette } from '@react-three/postprocessing'
+import { GlitchMode } from 'postprocessing'
 import * as THREE from 'three'
 import { useState, useEffect } from 'react'
+
+const GLITCH_DELAY = new THREE.Vector2(0, 0)
 
 export default function Effects() {
     const [glitchActive, setGlitchActive] = useState(false)
@@ -9,43 +11,37 @@ export default function Effects() {
     useEffect(() => {
         const handleGlitchPeak = (e: any) => {
             const intensity = e.detail?.intensity || 0.5
-
             setGlitchActive(true)
             window.dispatchEvent(new CustomEvent('play-ripple-sound'))
-
-            // Duration and strength based on audio intensity
             const duration = 200 + intensity * 800
-            setTimeout(() => {
-                setGlitchActive(false)
-            }, duration)
+            setTimeout(() => setGlitchActive(false), duration)
         }
-
         window.addEventListener('audio-glitch-peak', handleGlitchPeak)
         return () => window.removeEventListener('audio-glitch-peak', handleGlitchPeak)
     }, [])
 
     return (
         <EffectComposer multisampling={0}>
+            {/* Bloom: only fires on very dense particle overlaps — keeps particles crisp */}
             <Bloom
-                intensity={1.0}
-                luminanceThreshold={0.5}
-                luminanceSmoothing={0.02}
+                intensity={0.30}
+                luminanceThreshold={0.85}
+                luminanceSmoothing={0.06}
+            />
+            {/* Vignette: very subtle — frames the scene without darkening it */}
+            <Vignette
+                eskil={false}
+                offset={0.25}
+                darkness={0.45}
             />
             <Glitch
-                delay={new THREE.Vector2(0, 0)} // Handled by active prop
+                delay={GLITCH_DELAY}
                 duration={new THREE.Vector2(0.5, 1.2)}
                 strength={new THREE.Vector2(0.3, 1.0)}
                 mode={GlitchMode.SPORADIC}
                 ratio={0.85}
                 active={glitchActive}
             />
-            <ChromaticAberration
-                blendFunction={BlendFunction.NORMAL}
-                offset={new THREE.Vector2(0.002, 0.002)}
-                radialModulation={false}
-                modulationOffset={0}
-            />
-            <Noise opacity={0.1} />
         </EffectComposer>
     )
 }

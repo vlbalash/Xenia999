@@ -27,3 +27,8 @@ dist-ssr
 tsconfig.node.tsbuildinfo
 tsconfig.tsbuildinfo
 .vite
+*.tsbuildinfo
+vite.config.d.ts
+.env
+.env.local
+.claude/

@@ -10,7 +10,10 @@ export default {
                 "void": "#050505",
             },
             fontFamily: {
-                mono: ['"Inter"', 'monospace'], // Simplify for now, prompt mentioned Inter
+                sans: ['"Inter"', 'sans-serif'],
+                orbitron: ['"Orbitron"', 'sans-serif'],
+                petit: ['"Petit Formal Script"', 'cursive'],
+                mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
             }
         },
     },

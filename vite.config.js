@@ -6,5 +6,6 @@ export default defineConfig({
     server: {
         host: true,
         port: 3000,
-    }
+    },
+    // base: '/Xenia999/',  // enable only for GitHub Pages deploy
 });

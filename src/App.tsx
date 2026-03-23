@@ -1,28 +1,71 @@
 import { Canvas } from '@react-three/fiber'
 import { ScrollControls } from '@react-three/drei'
 import Scene from './Scene'
-import { Overlay } from './Overlay'
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Audio from './Audio'
+import { BriefingSystem } from './BriefingSystem'
+import { Dashboard } from './Dashboard'
+import MixerCursor from './MixerCursor'
+import ScrollIndicator from './ScrollIndicator'
+
+import { SPHERE_COLORS } from './constants'
 
 function App() {
+    const [briefingOpen, setBriefingOpen] = useState(false)
+    const [sphereColorIndex, setSphereColorIndex] = useState(0)
+    const [isCoreLightOn, setIsCoreLightOn] = useState(false)
+
+    useEffect(() => {
+        let timer: ReturnType<typeof setTimeout> | null = null
+        const handler = () => {
+            // Delay so the particle explosion is visible before briefing opens
+            timer = setTimeout(() => setBriefingOpen(true), 650)
+        }
+        window.addEventListener('auto-open-briefing', handler)
+        return () => {
+            window.removeEventListener('auto-open-briefing', handler)
+            if (timer) clearTimeout(timer)
+        }
+    }, [])
+
+    const handleToggleAudio = () => {
+        window.dispatchEvent(new CustomEvent('toggle-neural-audio'))
+    }
+
+    const handleNextColor = () => {
+        setSphereColorIndex(i => (i + 1) % SPHERE_COLORS.length)
+    }
+
     return (
         <>
+            {/* Premium HTML Dashboard — above everything */}
+            <Dashboard
+                isOpen={briefingOpen}
+                onActivate={() => setBriefingOpen(true)}
+                onToggleAudio={handleToggleAudio}
+                onNextColor={handleNextColor}
+                currentColor={SPHERE_COLORS[sphereColorIndex]}
+            />
+
             <Canvas>
                 <Suspense fallback={null}>
-                    <ScrollControls pages={4} damping={0.2}>
-                        <Scene />
-                        <Overlay />
+                    <ScrollControls pages={briefingOpen ? 0 : 12} damping={0.2}>
+                        <Scene
+                            briefingOpen={briefingOpen}
+                            isCoreLightOn={isCoreLightOn}
+                            onToggleCoreLight={() => setIsCoreLightOn(v => !v)}
+                            sphereColorIndex={sphereColorIndex}
+                        />
                     </ScrollControls>
                 </Suspense>
             </Canvas>
             <Audio />
-            {/* Noise Overlay */}
-            <div className="pointer-events-none fixed inset-0 z-50 opacity-20 mix-blend-overlay"
-                style={{
-                    backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")'
-                }}>
-            </div>
+            <MixerCursor />
+            {!briefingOpen && <ScrollIndicator />}
+
+            {briefingOpen && (
+                <BriefingSystem onClose={() => setBriefingOpen(false)} />
+            )}
         </>
     )
 }
