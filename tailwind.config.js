@@ -7,6 +7,9 @@ export default {
     theme: {
         extend: {
             colors: {
+                neutral: {
+                    850: '#1f1f1f',
+                },
                 "void": "#050505",
             },
             fontFamily: {

@@ -1,7 +1,6 @@
 import { EffectComposer, Bloom, Glitch, Vignette } from '@react-three/postprocessing'
 import { GlitchMode } from 'postprocessing'
 import * as THREE from 'three'
-import { useState, useEffect } from 'react'
 
 const GLITCH_DELAY = new THREE.Vector2(0, 0)
 
@@ -20,6 +19,7 @@ export default function Effects() {
         return () => window.removeEventListener('audio-glitch-peak', handleGlitchPeak)
     }, [])
 
+export const Effects = ({ glitchActive }: EffectsProps) => {
     return (
         <EffectComposer multisampling={0}>
             {/* Bloom: only fires on very dense particle overlaps — keeps particles crisp */}

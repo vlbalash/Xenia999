@@ -10,6 +10,10 @@ import ScrollIndicator from './ScrollIndicator'
 
 import { SPHERE_COLORS } from './constants'
 
+/**
+ * App — root layout.
+ * - Graceful degradation: Mobiles skip WebGL entirely.
+ */
 function App() {
     const [briefingOpen, setBriefingOpen] = useState(false)
     const [sphereColorIndex, setSphereColorIndex] = useState(0)
