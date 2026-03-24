@@ -108,26 +108,6 @@ function buildBriefKeyboard(p: {
   return { inline_keyboard: buttons };
 }
 
-function formatClientConfirmation(p: {
-  pkg: ServicePackage | null; estimate: number; projectName: string;
-}) {
-  return [
-    `✦ <b>XENIA999 Studio</b>`,
-    ``,
-    `Your project brief has been received.`,
-    ``,
-    p.projectName ? `<b>Project:</b> <code>${p.projectName}</code>` : null,
-    `<b>Package:</b> ${p.pkg?.name || '—'}`,
-    `<b>Estimate:</b> $${p.estimate.toLocaleString('en-US')}+`,
-    ``,
-    `We'll review your brief and reach out within <b>24 hours</b>.`,
-    ``,
-    `💬 <a href="https://t.me/XXXENIA999">@XXXENIA999</a>`,
-    ``,
-    `<i>— The XENIA999 Team</i>`,
-    `xxxenia999.tech`,
-  ].filter((l): l is string => l !== null).join('\n');
-}
 
 function formatBriefPlain(p: Parameters<typeof formatBriefMessage>[0]) {
   const names = Array.from(p.addons).map(id => ADD_ONS.find(a => a.id === id)?.name).filter(Boolean);

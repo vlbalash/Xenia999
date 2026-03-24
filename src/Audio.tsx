@@ -129,26 +129,6 @@ export default function Audio() {
         setIsStarted(true)
     }
 
-    // ── Shared reverb tail (short plate-style) ──
-    const makeReverb = (ctx: AudioContext, decaySec = 0.6, wet = 0.22): ConvolverNode => {
-        const sr = ctx.sampleRate
-        const len = Math.floor(sr * decaySec)
-        const buf = ctx.createBuffer(2, len, sr)
-        for (let ch = 0; ch < 2; ch++) {
-            const d = buf.getChannelData(ch)
-            for (let i = 0; i < len; i++) {
-                d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5)
-            }
-        }
-        const conv = ctx.createConvolver()
-        conv.buffer = buf
-        // wet/dry blend
-        const wetGain = ctx.createGain()
-        wetGain.gain.value = wet
-        conv.connect(wetGain)
-        ;(conv as any)._wetGain = wetGain
-        return conv
-    }
 
     // Tension Sound — energy building: sub-rumble + rising FM whine + ratchet
     const playTensionSound = () => {
@@ -226,148 +206,6 @@ export default function Audio() {
         rGain.gain.linearRampToValueAtTime(0.0, now + dur)
         ratchet.connect(rBp); rBp.connect(rGain); rGain.connect(dest)
         ratchet.start(now); ratchet.stop(now + dur)
-    }
-
-    // Launch Sound — slingshot release: sub kick + spring snap + long whoosh tail
-    const playLaunchSound = () => {
-        if (!audioCtxRef.current || isMuted) return
-        const ctx = audioCtxRef.current
-        const now = ctx.currentTime
-        const dest = masterGainRef.current || ctx.destination
-
-        // ── Sub kick: deep sine punch ──
-        const kick = ctx.createOscillator()
-        kick.type = 'sine'
-        kick.frequency.setValueAtTime(140, now)
-        kick.frequency.exponentialRampToValueAtTime(32, now + 0.12)
-        const kickGain = ctx.createGain()
-        kickGain.gain.setValueAtTime(0.5, now)
-        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14)
-        kick.connect(kickGain); kickGain.connect(dest)
-        kick.start(now); kick.stop(now + 0.14)
-
-        // ── Spring snap: FM pair — brief metallic ping ──
-        const sMod = ctx.createOscillator()
-        sMod.type = 'sine'
-        sMod.frequency.setValueAtTime(900, now)
-        sMod.frequency.exponentialRampToValueAtTime(200, now + 0.08)
-        const sModDepth = ctx.createGain()
-        sModDepth.gain.value = 1200
-        sMod.connect(sModDepth)
-
-        const sCarrier = ctx.createOscillator()
-        sCarrier.type = 'triangle'
-        sCarrier.frequency.setValueAtTime(1400, now)
-        sCarrier.frequency.exponentialRampToValueAtTime(180, now + 0.10)
-        sModDepth.connect(sCarrier.frequency)
-
-        const snapGain = ctx.createGain()
-        snapGain.gain.setValueAtTime(0.12, now)
-        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12)
-        sCarrier.connect(snapGain); snapGain.connect(dest)
-        sMod.start(now);     sMod.stop(now + 0.10)
-        sCarrier.start(now); sCarrier.stop(now + 0.12)
-
-        // ── Whoosh: noise sweeping from high to low, long tail ──
-        const wLen = Math.floor(ctx.sampleRate * 0.45)
-        const wBuf = ctx.createBuffer(1, wLen, ctx.sampleRate)
-        const wData = wBuf.getChannelData(0)
-        for (let i = 0; i < wLen; i++) wData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / wLen, 1.4)
-        const whoosh = ctx.createBufferSource()
-        whoosh.buffer = wBuf
-        const wHp = ctx.createBiquadFilter()
-        wHp.type = 'highpass'
-        wHp.frequency.setValueAtTime(3200, now)
-        wHp.frequency.exponentialRampToValueAtTime(200, now + 0.45)
-        const wGain = ctx.createGain()
-        wGain.gain.setValueAtTime(0.20, now)
-        wGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45)
-        whoosh.connect(wHp); wHp.connect(wGain); wGain.connect(dest)
-        whoosh.start(now); whoosh.stop(now + 0.45)
-
-        // ── Short reverb tail on snap ──
-        const rev = makeReverb(ctx, 0.5, 0.18)
-        ;(rev as any)._wetGain.connect(dest)
-        snapGain.connect(rev)
-    }
-
-    // Impact Sound — shattering energy: layered crack + sub boom + reverb bloom
-    const playImpactSound = () => {
-        if (!audioCtxRef.current || isMuted) return
-        const ctx = audioCtxRef.current
-        const now = ctx.currentTime
-        const dest = masterGainRef.current || ctx.destination
-
-        // ── Transient crack (noise burst) ──
-        const cLen = Math.floor(ctx.sampleRate * 0.04)
-        const cBuf = ctx.createBuffer(1, cLen, ctx.sampleRate)
-        const cData = cBuf.getChannelData(0)
-        for (let i = 0; i < cLen; i++) cData[i] = (Math.random() * 2 - 1) * (1 - i / cLen)
-        const crack = ctx.createBufferSource()
-        crack.buffer = cBuf
-        const crackHp = ctx.createBiquadFilter()
-        crackHp.type = 'highpass'
-        crackHp.frequency.value = 4000
-        const crackGain = ctx.createGain()
-        crackGain.gain.setValueAtTime(0.55, now)
-        crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04)
-        crack.connect(crackHp); crackHp.connect(crackGain); crackGain.connect(dest)
-        crack.start(now); crack.stop(now + 0.04)
-
-        // ── Sub boom: pitched sine drop ──
-        const boom = ctx.createOscillator()
-        boom.type = 'sine'
-        boom.frequency.setValueAtTime(180, now)
-        boom.frequency.exponentialRampToValueAtTime(28, now + 0.22)
-        const boomGain = ctx.createGain()
-        boomGain.gain.setValueAtTime(0.55, now)
-        boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25)
-        boom.connect(boomGain); boomGain.connect(dest)
-        boom.start(now); boom.stop(now + 0.25)
-
-        // ── Mid crunch: FM metallic ring ──
-        const rMod = ctx.createOscillator()
-        rMod.type = 'sine'
-        rMod.frequency.setValueAtTime(340, now)
-        const rModDepth = ctx.createGain()
-        rModDepth.gain.value = 800
-        rMod.connect(rModDepth)
-        const ring = ctx.createOscillator()
-        ring.type = 'square'
-        ring.frequency.setValueAtTime(520, now)
-        ring.frequency.exponentialRampToValueAtTime(80, now + 0.15)
-        rModDepth.connect(ring.frequency)
-        const ringGain = ctx.createGain()
-        ringGain.gain.setValueAtTime(0.10, now)
-        ringGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18)
-        ring.connect(ringGain); ringGain.connect(dest)
-        rMod.start(now); rMod.stop(now + 0.15)
-        ring.start(now); ring.stop(now + 0.18)
-
-        // ── Shockwave bloom: expanding noise swell ──
-        const bLen = Math.floor(ctx.sampleRate * 0.5)
-        const bBuf = ctx.createBuffer(1, bLen, ctx.sampleRate)
-        const bData = bBuf.getChannelData(0)
-        for (let i = 0; i < bLen; i++) bData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bLen, 1.5)
-        const bloom = ctx.createBufferSource()
-        bloom.buffer = bBuf
-        const bloomBp = ctx.createBiquadFilter()
-        bloomBp.type = 'bandpass'
-        bloomBp.frequency.setValueAtTime(500, now)
-        bloomBp.frequency.exponentialRampToValueAtTime(3500, now + 0.06)
-        bloomBp.frequency.exponentialRampToValueAtTime(300, now + 0.5)
-        bloomBp.Q.value = 0.8
-        const bloomGain = ctx.createGain()
-        bloomGain.gain.setValueAtTime(0.22, now)
-        bloomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5)
-        bloom.connect(bloomBp); bloomBp.connect(bloomGain); bloomGain.connect(dest)
-        bloom.start(now); bloom.stop(now + 0.5)
-
-        // ── Long reverb tail ──
-        const rev = makeReverb(ctx, 1.2, 0.30)
-        ;(rev as any)._wetGain.connect(dest)
-        boomGain.connect(rev)
-        bloomGain.connect(rev)
     }
 
     // Ripple Sound Effect Generator
@@ -756,11 +594,6 @@ export default function Audio() {
         const handleTension = () => playTensionSound()
         window.addEventListener('play-tension-sound', handleTension)
 
-        const handleLaunch = () => playLaunchSound()
-        window.addEventListener('play-launch-sound', handleLaunch)
-
-        const handleImpact = () => playImpactSound()
-        window.addEventListener('play-impact-sound', handleImpact)
 
         // Scratch — dual-layer vinyl: low rumble + high sizzle
         let scratchLow: AudioBufferSourceNode | null = null
@@ -1130,7 +963,6 @@ export default function Audio() {
             window.removeEventListener('play-ripple-sound', handleRipple)
             window.removeEventListener('play-tension-sound', handleTension)
             window.removeEventListener('play-launch-sound', handleLaunch)
-            window.removeEventListener('play-impact-sound', handleImpact)
             window.removeEventListener('bass-hold-start', handleBassStart)
             window.removeEventListener('bass-hold-stop',  handleBassStop)
             if (bassNodes) { try { bassNodes.osc1.stop(); bassNodes.osc2.stop(); bassNodes.lfo.stop() } catch {} }
