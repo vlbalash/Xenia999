@@ -4,7 +4,7 @@ import {
   SERVICE_PACKAGES, ADD_ONS, DESIGN_LEVELS, TIMELINES,
   ServicePackage, DesignLevel, Timeline,
 } from './BriefingData';
-import { TG_BOT_TOKEN, OWNER_CHAT_ID, EASYSTAFF_URL } from './constants';
+import { EASYSTAFF_URL } from './constants';
 
 interface BriefingSystemProps { onClose: () => void; }
 
@@ -125,7 +125,6 @@ function formatBriefPlain(p: Parameters<typeof formatBriefMessage>[0]) {
 }
 
 async function sendBriefToBot(text: string, replyMarkup?: object): Promise<boolean> {
-  if (!TG_BOT_TOKEN || !OWNER_CHAT_ID) return false;
   try {
     const res = await fetch(`/api/send-brief`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
