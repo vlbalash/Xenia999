@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 export default function MixerCursor() {
   const cx = typeof window !== 'undefined' ? window.innerWidth / 2 : 400
@@ -123,6 +123,30 @@ export default function MixerCursor() {
   const glowOp     = pressed ? 0.5 : isPointer ? 0.3 : 0.15
 
   return (
+    <>
+    {/* ── Edge labels — always visible, independent of cursor visibility ── */}
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998 }}>
+      {(['L','R','T','S'] as const).map(label => {
+        const brightness = label === 'L' ? 0.25 + (1 - mixX) * 0.65
+                         : label === 'R' ? 0.25 + mixX * 0.65
+                         : label === 'T' ? 0.25 + (1 - mixY) * 0.65
+                         :                 0.25 + mixY * 0.65
+        const style: React.CSSProperties = {
+          position: 'absolute',
+          fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
+          letterSpacing: '0.1em',
+          color: `rgba(${colorRgb},${brightness})`,
+          textShadow: `0 0 10px rgba(${colorRgb},0.8)`,
+          userSelect: 'none',
+          ...(label === 'L' && { left: 16, top: '50%', transform: 'translateY(-50%)' }),
+          ...(label === 'R' && { right: 16, top: '50%', transform: 'translateY(-50%)' }),
+          ...(label === 'T' && { top: 16, left: '50%', transform: 'translateX(-50%)' }),
+          ...(label === 'S' && { bottom: 16, left: '50%', transform: 'translateX(-50%)' }),
+        }
+        return <div key={label} style={style}>{label}</div>
+      })}
+    </div>
+
     <div style={{
       position: 'fixed', inset: 0,
       pointerEvents: 'none', zIndex: 9999,
@@ -153,44 +177,6 @@ export default function MixerCursor() {
           willChange: 'transform',
         }} />
       </div>
-
-      {/* ── Edge labels — always visible, show mixer position ── */}
-      <div style={{
-        position: 'absolute', left: 14, top: '50%',
-        transform: 'translateY(-50%)',
-        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
-        letterSpacing: '0.1em',
-        color: `rgba(${colorRgb},${0.25 + (1 - mixX) * 0.65})`,
-        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
-        userSelect: 'none',
-      }}>L</div>
-      <div style={{
-        position: 'absolute', right: 14, top: '50%',
-        transform: 'translateY(-50%)',
-        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
-        letterSpacing: '0.1em',
-        color: `rgba(${colorRgb},${0.25 + mixX * 0.65})`,
-        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
-        userSelect: 'none',
-      }}>R</div>
-      <div style={{
-        position: 'absolute', top: 14, left: '50%',
-        transform: 'translateX(-50%)',
-        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
-        letterSpacing: '0.1em',
-        color: `rgba(${colorRgb},${0.25 + (1 - mixY) * 0.65})`,
-        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
-        userSelect: 'none',
-      }}>T</div>
-      <div style={{
-        position: 'absolute', bottom: 14, left: '50%',
-        transform: 'translateX(-50%)',
-        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
-        letterSpacing: '0.1em',
-        color: `rgba(${colorRgb},${0.25 + mixY * 0.65})`,
-        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
-        userSelect: 'none',
-      }}>S</div>
 
       {/* ── Audio mixer crosshair lines — hidden ── */}
       {false && audioActive && (
@@ -452,5 +438,6 @@ export default function MixerCursor() {
         </svg>
       </div>
     </div>
+    </>
   )
 }
