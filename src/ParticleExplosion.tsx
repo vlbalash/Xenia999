@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useEffect } from 'react'
+import { useRef, useMemo, useState, useEffect, Suspense } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useScroll, Text } from '@react-three/drei'
@@ -464,18 +464,21 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                     return (
                         <group key={i} rotation={[0, baseAngle, 0]}>
                             {/* Primary Text Segment */}
-                            <Text
-                                position={[0, 0.05, radius]}
-                                fontSize={0.06}
-                                color="#e5e7eb"
-                                anchorX="center"
-                                anchorY="middle"
-                                fillOpacity={0.85}
-                                letterSpacing={0.06}
-                                material-side={THREE.FrontSide}
-                            >
-                                WEBSITE DEVELOPMENT
-                            </Text>
+                            <Suspense fallback={null}>
+                                <Text
+                                    position={[0, 0, radius]}
+                                    fontSize={0.09}
+                                    color="#2dd4bf"
+                                    anchorX="center"
+                                    anchorY="middle"
+                                    fillOpacity={1}
+                                    letterSpacing={0.18}
+                                    material-side={THREE.DoubleSide}
+                                    font="https://cdn.jsdelivr.net/npm/@fontsource/orbitron@5.0.17/files/orbitron-latin-700-normal.woff2"
+                                >
+                                    WEBSITE DEVELOPMENT
+                                </Text>
+                            </Suspense>
 
                             {/* Cursive Reveal Interleaved Segment */}
                             <group rotation={[0, 0, 0]}>
