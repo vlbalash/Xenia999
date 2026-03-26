@@ -466,13 +466,13 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                             {/* Primary Text Segment */}
                             <Text
                                 position={[0, 0, radius]}
-                                fontSize={0.09}
+                                fontSize={0.075}
                                 color="#2dd4bf"
                                 anchorX="center"
                                 anchorY="middle"
                                 fillOpacity={1}
-                                letterSpacing={0.18}
-                                font="https://cdn.jsdelivr.net/npm/@fontsource/orbitron@5.0.17/files/orbitron-latin-700-normal.woff"
+                                letterSpacing={0.04}
+                                font="https://cdn.jsdelivr.net/npm/@fontsource/orbitron@5.0.17/files/orbitron-latin-400-normal.woff"
                             >
                                 WEBSITE DEVELOPMENT
                             </Text>
