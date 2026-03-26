@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, Suspense } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Stars, PerspectiveCamera, useScroll } from '@react-three/drei'
 import NeuralCore from './NeuralCore'
@@ -250,10 +250,12 @@ export default function Scene({ briefingOpen, isCoreLightOn, onToggleCoreLight, 
                             sphereColorIndex={sphereColorIndex}
                         />
                     </group>
-                    {/* Right: ParticleExplosion — no Float, ring must stay stable */}
-                    <group position={[xOffset, -yOffset, 0]}>
-                        <ParticleExplosion colorIndex={sphereColorIndex} />
-                    </group>
+                    {/* Right: ParticleExplosion — Suspense isolates font loading from main canvas */}
+                    <Suspense fallback={null}>
+                        <group position={[xOffset, -yOffset, 0]}>
+                            <ParticleExplosion colorIndex={sphereColorIndex} />
+                        </group>
+                    </Suspense>
                 </group>
             )}
 

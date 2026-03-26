@@ -108,8 +108,8 @@ const fragmentShader = `
   // Per-style geometric pattern → 0..1 drives A↔B color blend
   // All styles now have time animation for a living, breathing look
   float getPattern(int style, vec3 p, float t) {
-      // 0: Zebra — scrolling sharp wave bands
-      if (style == 0) return smoothstep(-0.1, 0.1, sin(p.y * 30.0 + sin(p.x * 10.0 + p.z * 15.0) * 1.5 + t * 1.2));
+      // 0: Zebra — sharp diagonal stripes like Butterfly but B&W
+      if (style == 0) return smoothstep(-0.05, 0.05, sin((p.x + p.y) * 22.0 + t * 1.0) * cos((p.x - p.y) * 18.0 + p.z * 12.0 + t * 0.7));
       // 1: Tiger — flowing diagonal stripes
       if (style == 1) return smoothstep(0.0, 0.25, sin(p.x * 20.0 + sin(p.y * 15.0) * 3.0 + p.z * 5.0 + t * 2.0));
       // 2: Iguana — pulsing 3-axis facets
