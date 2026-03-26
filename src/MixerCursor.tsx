@@ -154,7 +154,45 @@ export default function MixerCursor() {
         }} />
       </div>
 
-      {/* ── Audio mixer crosshair lines — hidden, lines removed by user request ── */}
+      {/* ── Edge labels — always visible, show mixer position ── */}
+      <div style={{
+        position: 'absolute', left: 14, top: '50%',
+        transform: 'translateY(-50%)',
+        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
+        letterSpacing: '0.1em',
+        color: `rgba(${colorRgb},${0.25 + (1 - mixX) * 0.65})`,
+        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
+        userSelect: 'none',
+      }}>L</div>
+      <div style={{
+        position: 'absolute', right: 14, top: '50%',
+        transform: 'translateY(-50%)',
+        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
+        letterSpacing: '0.1em',
+        color: `rgba(${colorRgb},${0.25 + mixX * 0.65})`,
+        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
+        userSelect: 'none',
+      }}>R</div>
+      <div style={{
+        position: 'absolute', top: 14, left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
+        letterSpacing: '0.1em',
+        color: `rgba(${colorRgb},${0.25 + (1 - mixY) * 0.65})`,
+        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
+        userSelect: 'none',
+      }}>T</div>
+      <div style={{
+        position: 'absolute', bottom: 14, left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
+        letterSpacing: '0.1em',
+        color: `rgba(${colorRgb},${0.25 + mixY * 0.65})`,
+        textShadow: `0 0 8px rgba(${colorRgb},0.7)`,
+        userSelect: 'none',
+      }}>S</div>
+
+      {/* ── Audio mixer crosshair lines — hidden ── */}
       {false && audioActive && (
         <>
           {/* ── HORIZONTAL DIAMOND STRING ── */}
