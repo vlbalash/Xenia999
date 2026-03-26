@@ -202,6 +202,10 @@ const fragmentShader = `
     // Mixer: right side of crossfader boosts this sphere
     alpha *= 1.0 + uMixerX * 0.7;
 
+    // No bloom — clamp luminance below bloom threshold (0.85)
+    float lum = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
+    if (lum > 0.75) { finalColor *= 0.75 / lum; }
+
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
