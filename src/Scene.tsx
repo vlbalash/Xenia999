@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Stars, Float, PerspectiveCamera, useScroll } from '@react-three/drei'
+import { Stars, PerspectiveCamera, useScroll } from '@react-three/drei'
 import NeuralCore from './NeuralCore'
 import ParticleExplosion from './ParticleExplosion'
 import * as THREE from 'three'
@@ -250,12 +250,10 @@ export default function Scene({ briefingOpen, isCoreLightOn, onToggleCoreLight, 
                             sphereColorIndex={sphereColorIndex}
                         />
                     </group>
-                    {/* Right: ParticleExplosion — gentle float, isolated from NeuralCore */}
-                    <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
-                        <group position={[xOffset, -yOffset, 0]}>
-                            <ParticleExplosion colorIndex={sphereColorIndex} />
-                        </group>
-                    </Float>
+                    {/* Right: ParticleExplosion — no Float, ring must stay stable */}
+                    <group position={[xOffset, -yOffset, 0]}>
+                        <ParticleExplosion colorIndex={sphereColorIndex} />
+                    </group>
                 </group>
             )}
 
