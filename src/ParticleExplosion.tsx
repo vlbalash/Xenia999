@@ -437,7 +437,7 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                 onPointerOut={() => {}}
             >
                 <sphereGeometry args={[1.1, 16, 16]} />
-                <meshBasicMaterial transparent opacity={0} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
             </mesh>
             
             {/* Glass Tube Belt - color follows active theme */}
