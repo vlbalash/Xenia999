@@ -465,15 +465,14 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                         <group key={i} rotation={[0, baseAngle, 0]}>
                             {/* Primary Text Segment */}
                             <Text
-                                position={[0, 0, radius]}
-                                fontSize={0.09}
-                                color="#2dd4bf"
+                                position={[0, 0.05, radius]}
+                                fontSize={0.06}
+                                color="#e5e7eb"
                                 anchorX="center"
                                 anchorY="middle"
-                                fillOpacity={1}
-                                letterSpacing={0.18}
-                                material-side={THREE.DoubleSide}
-                                font="https://cdn.jsdelivr.net/npm/@fontsource/orbitron@5/files/orbitron-latin-700-normal.woff2"
+                                fillOpacity={0.85}
+                                letterSpacing={0.06}
+                                material-side={THREE.FrontSide}
                             >
                                 WEBSITE DEVELOPMENT
                             </Text>
