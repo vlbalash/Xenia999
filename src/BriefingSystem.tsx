@@ -295,14 +295,7 @@ export const BriefingSystem: React.FC<BriefingSystemProps> = ({ onClose }) => {
     addons: selectedAddOns, projectName, clientTelegram, clientEmail, projectDesc, estimate: totalPrice,
   }), [selectedPackage, selectedDesignLevel, selectedTimeline, selectedAddOns, projectName, clientTelegram, clientEmail, projectDesc, totalPrice]);
 
-  const telegramUrl = useMemo(() => {
-    const parts = [
-      `pkg=${selectedPackage?.id || 'none'}`,
-      `est=${totalPrice}`,
-      projectName ? `name=${encodeURIComponent(projectName).slice(0, 40)}` : null,
-    ].filter(Boolean);
-    return `https://t.me/XENIA999bot?start=${parts.join('_')}`;
-  }, [selectedPackage, totalPrice, projectName]);
+  const telegramUrl = `https://t.me/XXXENIA999`;
 
   const go = (n: number) => { setDir(n > step ? 1 : -1); setStep(n); };
   const toggleAddOn = (id: string) => {
@@ -1270,7 +1263,7 @@ export const BriefingSystem: React.FC<BriefingSystemProps> = ({ onClose }) => {
                       <p className="text-[10px] mt-0.5" style={{ color: T.subText }}>or contact <a href="https://t.me/XXXENIA999" className="underline">@XXXENIA999</a> directly</p>
                     </motion.div>
                   )}
-                  <p className="text-center text-[9px]" style={{ color: T.mutedText }}>@XENIA999bot · response within 24h · xxxenia999.tech</p>
+                  <p className="text-center text-[9px]" style={{ color: T.mutedText }}>@XXXENIA999 · response within 24h · xxxenia999.tech</p>
                 </div>
               </motion.div>
             )}
