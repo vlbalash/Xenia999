@@ -233,7 +233,6 @@ const smoothstep = (min: number, max: number, value: number) => {
 export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: number }) {
     const pointsRef = useRef<THREE.Points>(null)
     const textGroupRef = useRef<THREE.Group>(null)
-    const backdropRef = useRef<THREE.Mesh>(null!)
     const scroll = useScroll()
 
     const count = 22000
@@ -243,59 +242,6 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
     const completedRef = useRef(false)
     const ringSpinRef = useRef(0)
     const autoRevealRef = useRef(false)
-    const backdropPopActiveRef = useRef(false)
-    const backdropPoppedRef = useRef(false)
-    const backdropPopTimeRef = useRef(0)
-
-    // ── TAP cutout texture for the black backdrop sphere ──
-    const tapCtxRef = useRef<CanvasRenderingContext2D | null>(null)
-    const tapTexture = useMemo(() => {
-        const canvas = document.createElement('canvas')
-        canvas.width = 1024; canvas.height = 1024
-        const ctx = canvas.getContext('2d')!
-        tapCtxRef.current = ctx
-        const tex = new THREE.CanvasTexture(canvas)
-        tex.anisotropy = 8
-        return tex
-    }, [])
-
-    const paintTap = (ctx: CanvasRenderingContext2D) => {
-        const W = 1024, H = 1024
-        ctx.clearRect(0, 0, W, H)
-        ctx.fillStyle = '#000000'
-        ctx.fillRect(0, 0, W, H)
-        const pts = [
-            { x: W * 0.17, y: H * 0.5 },
-            { x: W * 0.50, y: H * 0.5 },
-            { x: W * 0.83, y: H * 0.5 },
-        ]
-        for (const p of pts) {
-            ctx.save()
-            ctx.beginPath()
-            ctx.ellipse(p.x, p.y, 175, 72, 0, 0, Math.PI * 2)
-            ctx.strokeStyle = 'rgba(255,255,255,0.18)'
-            ctx.lineWidth = 3
-            ctx.stroke()
-            ctx.restore()
-            ctx.globalCompositeOperation = 'destination-out'
-            ctx.textAlign = 'center'
-            ctx.textBaseline = 'middle'
-            ctx.font = '900 82px Orbitron, "Arial Black", Arial'
-            ctx.fillStyle = 'rgba(0,0,0,1)'
-            ctx.fillText('TAP', p.x, p.y)
-            ctx.globalCompositeOperation = 'source-over'
-        }
-        tapTexture.needsUpdate = true
-    }
-
-    useEffect(() => {
-        if (tapCtxRef.current) paintTap(tapCtxRef.current)
-        const orbitronUrl = 'https://cdn.jsdelivr.net/npm/@fontsource/orbitron@5.0.17/files/orbitron-latin-700-normal.woff2'
-        new FontFace('Orbitron', `url(${orbitronUrl})`, { weight: '700' }).load()
-            .then(f => { document.fonts.add(f); if (tapCtxRef.current) paintTap(tapCtxRef.current) })
-            .catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 
     const [positions, randomness] = useMemo(() => {
         const pos = new Float32Array(count * 3)
@@ -356,12 +302,9 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
         return () => window.removeEventListener('mixer-move', onMixer)
     }, [uniforms])
 
-    // ── Impact: backdrop pop trigger ──────────────────────────────────────────
+    // ── Impact: burst spike ───────────────────────────────────────────────────
     useEffect(() => {
         const onImpact = () => {
-            backdropPopActiveRef.current = true
-            backdropPopTimeRef.current = 0
-            // Big burst spike — particles explode outward on impact
             uniforms.uBurst.value = 1.4
         }
         window.addEventListener('particle-impact', onImpact)
@@ -434,12 +377,6 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
         if (completedRef.current && offset < 0.05) {
             completedRef.current = false
             ringSpinRef.current = 0
-            backdropPoppedRef.current = false
-            backdropPopActiveRef.current = false
-            backdropPopTimeRef.current = 0
-            if (backdropRef.current) {
-                backdropRef.current.scale.setScalar(1.0)
-            }
             if (autoRevealRef.current) { setClicks(0); autoRevealRef.current = false }
         }
 
@@ -455,9 +392,6 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                 pointsRef.current.rotation.x = THREE.MathUtils.lerp(pointsRef.current.rotation.x, 0, delta * 1.5)
                 pointsRef.current.rotation.y = THREE.MathUtils.lerp(pointsRef.current.rotation.y, 0, delta * 1.5)
                 pointsRef.current.rotation.z = ringSpinRef.current
-            }
-            if (backdropRef.current) {
-                ;(backdropRef.current.material as THREE.MeshBasicMaterial).opacity = 0
             }
             if (textGroupRef.current) {
                 textGroupRef.current.rotation.y -= delta * 0.3
@@ -484,30 +418,6 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                 const burstSpin = uniforms.uBurst.value * 0.025
                 pointsRef.current.rotation.y += 0.002 + burstSpin
                 pointsRef.current.rotation.x += 0.001 + burstSpin * 0.5
-            }
-
-            if (backdropRef.current) {
-                if (backdropPopActiveRef.current) {
-                    // ── Pop animation: backdrop expands and evaporates on impact ──
-                    backdropPopTimeRef.current += delta
-                    const p = Math.min(1, backdropPopTimeRef.current / 0.38)
-                    const eased = 1 - Math.pow(1 - p, 3) // easeOutCubic
-                    backdropRef.current.scale.setScalar(1.08 + eased * 1.6) // 1.08 → 2.68
-                    const opacityFade = Math.max(0, 1.0 - Math.pow(p, 0.5))
-                    ;(backdropRef.current.material as THREE.MeshBasicMaterial).opacity = opacityFade
-                    if (p >= 1.0) {
-                        backdropPopActiveRef.current = false
-                        backdropPoppedRef.current = true
-                        ;(backdropRef.current.material as THREE.MeshBasicMaterial).opacity = 0
-                    }
-                } else if (!backdropPoppedRef.current) {
-                    // Normal: invisible at start, fades in with explosion, out with ring
-                    const ringMorph = uniforms.uRingMorph.value
-                    const explFactor = uniforms.uExplosion.value
-                    const fadeIn  = Math.min(1.0, explFactor * 2.5)
-                    const fadeOut = Math.max(0, 1.0 - ringMorph * 3.0)
-                    ;(backdropRef.current.material as THREE.MeshBasicMaterial).opacity = fadeIn * fadeOut
-                }
             }
 
             if (textGroupRef.current) {
@@ -570,12 +480,6 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                     )
                 })}
             </group>
-
-            {/* Backdrop: black sphere with TAP cutouts. Fades in during explosion, out on ring morph. */}
-            <mesh ref={backdropRef} renderOrder={-1}>
-                <sphereGeometry args={[1.08, 32, 32]} />
-                <meshBasicMaterial map={tapTexture} transparent opacity={0} depthWrite={true} alphaTest={0.05} />
-            </mesh>
 
             <points ref={pointsRef}>
                 <bufferGeometry>
