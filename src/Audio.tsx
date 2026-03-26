@@ -19,13 +19,12 @@ export default function Audio() {
     const toggleMute = () => {
         if (!masterGainRef.current || !audioCtxRef.current) return
         const goingMute = !isMuted
-        // FX chain gain
         masterGainRef.current.gain.exponentialRampToValueAtTime(
             goingMute ? 0.001 : 0.6,
             audioCtxRef.current.currentTime + 0.5
         )
-        // Suno HTML5 track
-        if (sunoAudioRef.current) {
+        // Only control HTML5 volume if NOT routed through Web Audio
+        if (sunoAudioRef.current && !sunoSourceRef.current) {
             sunoAudioRef.current.volume = goingMute ? 0 : 1.0
         }
         setIsMuted(goingMute)
@@ -89,14 +88,24 @@ export default function Audio() {
         dataArrayRef.current = dataArray
         analyser.connect(mainGain)
 
-        // Suno track — plain HTML5, no Web Audio routing (avoids CORS)
+        // Suno track — route through Web Audio for mixer control
         const audio = new window.Audio('https://cdn1.suno.ai/047c5bd8-d62d-4b80-84ec-cf7c48bef6da.mp3')
+        audio.crossOrigin = 'anonymous'
         audio.loop = true
         audio.volume = 1.0
         sunoAudioRef.current = audio
-        sunoSourceRef.current = null  // not connected through Web Audio
 
         audio.play().catch(e => console.warn("Suno track blocked:", e))
+
+        // Route through mixer chain (CORS permitting)
+        try {
+            const source = ctx.createMediaElementSource(audio)
+            source.connect(mixFilter)
+            sunoSourceRef.current = source
+        } catch {
+            // CORS fallback — audio plays directly, mixer affects FX only
+            sunoSourceRef.current = null
+        }
 
         // Peak detection loop — store rAF ID for cleanup
         let lastPeakTime = 0

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function MixerCursor() {
   const cx = typeof window !== 'undefined' ? window.innerWidth / 2 : 400
@@ -124,27 +124,65 @@ export default function MixerCursor() {
 
   return (
     <>
-    {/* ── Edge labels — always visible, independent of cursor visibility ── */}
+    {/* ── Premium mixer UI — always visible ── */}
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998 }}>
-      {(['L','R','T','S'] as const).map(label => {
-        const brightness = label === 'L' ? 0.25 + (1 - mixX) * 0.65
-                         : label === 'R' ? 0.25 + mixX * 0.65
-                         : label === 'T' ? 0.25 + (1 - mixY) * 0.65
-                         :                 0.25 + mixY * 0.65
-        const style: React.CSSProperties = {
+
+      {/* XY pad — bottom right corner */}
+      <div style={{
+        position: 'absolute', bottom: 28, right: 28,
+        width: 72, height: 72,
+        border: `1px solid rgba(${colorRgb},0.2)`,
+        borderRadius: 4,
+        background: `rgba(0,0,0,0.35)`,
+        backdropFilter: 'blur(4px)',
+      }}>
+        {/* Grid lines */}
+        <div style={{ position:'absolute', left:'50%', top:0, bottom:0, width:1, background:`rgba(${colorRgb},0.08)` }}/>
+        <div style={{ position:'absolute', top:'50%', left:0, right:0, height:1, background:`rgba(${colorRgb},0.08)` }}/>
+        {/* XY position dot */}
+        <div style={{
           position: 'absolute',
-          fontSize: '9px', fontFamily: "'Orbitron', monospace", fontWeight: 700,
-          letterSpacing: '0.1em',
-          color: `rgba(${colorRgb},${brightness})`,
-          textShadow: `0 0 10px rgba(${colorRgb},0.8)`,
-          userSelect: 'none',
-          ...(label === 'L' && { left: 16, top: '50%', transform: 'translateY(-50%)' }),
-          ...(label === 'R' && { right: 16, top: '50%', transform: 'translateY(-50%)' }),
-          ...(label === 'T' && { top: 16, left: '50%', transform: 'translateX(-50%)' }),
-          ...(label === 'S' && { bottom: 16, left: '50%', transform: 'translateX(-50%)' }),
-        }
-        return <div key={label} style={style}>{label}</div>
-      })}
+          left: `${mixX * 100}%`, top: `${mixY * 100}%`,
+          width: 6, height: 6,
+          transform: 'translate(-50%,-50%)',
+          borderRadius: '50%',
+          background: color,
+          boxShadow: `0 0 8px ${color}, 0 0 16px rgba(${colorRgb},0.5)`,
+        }}/>
+        {/* Corner labels */}
+        {[['L','T',0,0],['R','T','auto',0],['L','S',0,'auto'],['R','S','auto','auto']].map(([h,v,r,b]) => (
+          <div key={`${h}${v}`} style={{
+            position:'absolute', right: r as any, bottom: b as any, left: r === 0 ? 3 : undefined, top: b === 0 ? 2 : undefined,
+            fontSize:'6px', fontFamily:"'Orbitron',monospace", fontWeight:700,
+            color:`rgba(${colorRgb},0.25)`, userSelect:'none', lineHeight:1,
+          }}>{h}</div>
+        ))}
+      </div>
+
+      {/* L label + left bar */}
+      <div style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+        <div style={{ width:2, height: Math.round((1-mixX)*40), background:`rgba(${colorRgb},0.6)`, boxShadow:`0 0 6px rgba(${colorRgb},0.5)`, borderRadius:1, transition:'height 0.05s' }}/>
+        <div style={{ fontSize:'9px', fontFamily:"'Orbitron',monospace", fontWeight:700, color:`rgba(${colorRgb},${0.3+(1-mixX)*0.6})`, textShadow:`0 0 8px rgba(${colorRgb},0.8)`, userSelect:'none' }}>L</div>
+      </div>
+
+      {/* R label + right bar */}
+      <div style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+        <div style={{ width:2, height: Math.round(mixX*40), background:`rgba(${colorRgb},0.6)`, boxShadow:`0 0 6px rgba(${colorRgb},0.5)`, borderRadius:1, transition:'height 0.05s' }}/>
+        <div style={{ fontSize:'9px', fontFamily:"'Orbitron',monospace", fontWeight:700, color:`rgba(${colorRgb},${0.3+mixX*0.6})`, textShadow:`0 0 8px rgba(${colorRgb},0.8)`, userSelect:'none' }}>R</div>
+      </div>
+
+      {/* T label + top bar */}
+      <div style={{ position:'absolute', top:14, left:'50%', transform:'translateX(-50%)', display:'flex', flexDirection:'row', alignItems:'center', gap:3 }}>
+        <div style={{ height:2, width: Math.round((1-mixY)*40), background:`rgba(${colorRgb},0.6)`, boxShadow:`0 0 6px rgba(${colorRgb},0.5)`, borderRadius:1, transition:'width 0.05s' }}/>
+        <div style={{ fontSize:'9px', fontFamily:"'Orbitron',monospace", fontWeight:700, color:`rgba(${colorRgb},${0.3+(1-mixY)*0.6})`, textShadow:`0 0 8px rgba(${colorRgb},0.8)`, userSelect:'none' }}>T</div>
+      </div>
+
+      {/* S label + bottom bar */}
+      <div style={{ position:'absolute', bottom:14, left:'50%', transform:'translateX(-50%)', display:'flex', flexDirection:'row', alignItems:'center', gap:3 }}>
+        <div style={{ height:2, width: Math.round(mixY*40), background:`rgba(${colorRgb},0.6)`, boxShadow:`0 0 6px rgba(${colorRgb},0.5)`, borderRadius:1, transition:'width 0.05s' }}/>
+        <div style={{ fontSize:'9px', fontFamily:"'Orbitron',monospace", fontWeight:700, color:`rgba(${colorRgb},${0.3+mixY*0.6})`, textShadow:`0 0 8px rgba(${colorRgb},0.8)`, userSelect:'none' }}>S</div>
+      </div>
+
     </div>
 
     <div style={{
