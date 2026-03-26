@@ -179,9 +179,9 @@ const fragmentShader = `
         finalColor = mix(finalColor, bleedCol, bleedPeak * 0.45);
     }
 
-    // Particles stay fully visible during explosion scatter and ring morph;
-    // only the pierce event fades them (handled below)
-    alpha *= 1.9;
+    // In ring mode each particle is dimmer — prevents additive blending accumulation in center
+    float ringAlphaScale = mix(1.9, 0.28, ringBlend);
+    alpha *= ringAlphaScale;
 
     // WOW burst flash: particles ignite white then cool to new palette
     finalColor = mix(finalColor, vec3(1.0, 1.0, 1.0), pow(uBurst, 0.5) * 0.92);
