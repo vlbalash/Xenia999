@@ -32,11 +32,11 @@ const vertexShader = `
 
     // Ring Morph: project onto XY plane — ring stands vertical, NeuralCore flies through along Z
     // On pierce: ring radius expands as a shockwave, Z spread explodes into a disk
-    float ringRadius = (5.0 + aRandom.y * 1.5) + uPierce * uPierce * 9.0;
+    float ringRadius = (5.0 + aRandom.y * 0.35) + uPierce * uPierce * 9.0;
     vec3 flatPos = vec3(position.x + 0.001, position.y + 0.001, 0.0);
     vec3 ringDir = normalize(flatPos);
     vec3 ringPos = ringDir * ringRadius;
-    ringPos.z += (aRandom.z - 0.5) * (1.0 + uPierce * 4.5);
+    ringPos.z += (aRandom.z - 0.5) * (0.18 + uPierce * 4.5);
 
     // Ease in-out the ring morph to avoid abrupt direction changes
     float smoothMorph = uRingMorph * uRingMorph * (3.0 - 2.0 * uRingMorph);
@@ -58,8 +58,8 @@ const vertexShader = `
     // Exponential size distribution: most particles small, a few large — looks richer
     float sizeFactor = aRandom.y * aRandom.y;
     float size = 2.5 + sizeFactor * 18.0;
-    // Ring particles are far from camera — need larger base size to stay visible
-    float ringSize = 12.0 + aRandom.y * 16.0;
+    // Ring particles — tight belt, smaller size for crisp edge
+    float ringSize = 7.0 + aRandom.y * 6.0;
     float baseSize = mix(size, ringSize, smoothMorph);
     gl_PointSize = baseSize * (1.0 + uExplosion * 3.0 * (1.0 - smoothMorph) + entryPulse * 0.5);
     gl_PointSize *= (1.0 / -mvPosition.z);
@@ -148,7 +148,9 @@ const fragmentShader = `
 
     // Per-particle brightness from style pattern — ring locks to full brightness to prevent flicker
     float particleDensity = mix(mix(0.88, 1.0, factor), 1.0, ringBlend);
-    alpha *= particleDensity;
+    // Belt fade: particles off-plane fade out in ring mode
+    float beltFade = mix(1.0, 1.0 - smoothstep(0.0, 0.25, abs(vLocalPos.z)), ringBlend);
+    alpha *= particleDensity * beltFade;
 
     // Explosion flash suppressed once ring has formed
     float spherePhase = 1.0 - ringBlend;
