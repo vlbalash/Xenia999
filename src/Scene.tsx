@@ -254,12 +254,14 @@ export default function Scene({ briefingOpen, isCoreLightOn, onToggleCoreLight, 
                                 />
                             </group>
                         </Select>
-                        {/* Right: ParticleExplosion — NOT selected, no bloom */}
-                        <Suspense fallback={null}>
-                            <group position={[xOffset, -yOffset, 0]}>
-                                <ParticleExplosion colorIndex={sphereColorIndex} />
-                            </group>
-                        </Suspense>
+                        {/* Right: ParticleExplosion — explicitly not selected, no bloom */}
+                        <Select enabled={false}>
+                            <Suspense fallback={null}>
+                                <group position={[xOffset, -yOffset, 0]}>
+                                    <ParticleExplosion colorIndex={sphereColorIndex} />
+                                </group>
+                            </Suspense>
+                        </Select>
                     </group>
                 </Selection>
             )}
