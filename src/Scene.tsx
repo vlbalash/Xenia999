@@ -1,6 +1,7 @@
 import { useRef, useEffect, Suspense } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Stars, PerspectiveCamera, useScroll } from '@react-three/drei'
+import { Selection, Select } from '@react-three/postprocessing'
 import NeuralCore from './NeuralCore'
 import ParticleExplosion from './ParticleExplosion'
 import * as THREE from 'three'
@@ -238,25 +239,29 @@ export default function Scene({ briefingOpen, isCoreLightOn, onToggleCoreLight, 
 
             {/* Spheres */}
             {!briefingOpen && (
-                <group>
-                    {/* Left: NeuralCore — no Float so the flight path is clean and precise */}
-                    <group ref={neuralCoreRef} position={[-xOffset, yOffset, 0]}>
-                        <NeuralCore
-                            hasText={true}
-                            basePosition={[0, 0, 0]}
-                            isLightingEnabled={isCoreLightOn}
-                            onToggleLight={onToggleCoreLight}
-                            animState={animState}
-                            sphereColorIndex={sphereColorIndex}
-                        />
+                <Selection>
+                    <group>
+                        {/* Left: NeuralCore — selected for bloom */}
+                        <Select enabled>
+                            <group ref={neuralCoreRef} position={[-xOffset, yOffset, 0]}>
+                                <NeuralCore
+                                    hasText={true}
+                                    basePosition={[0, 0, 0]}
+                                    isLightingEnabled={isCoreLightOn}
+                                    onToggleLight={onToggleCoreLight}
+                                    animState={animState}
+                                    sphereColorIndex={sphereColorIndex}
+                                />
+                            </group>
+                        </Select>
+                        {/* Right: ParticleExplosion — NOT selected, no bloom */}
+                        <Suspense fallback={null}>
+                            <group position={[xOffset, -yOffset, 0]}>
+                                <ParticleExplosion colorIndex={sphereColorIndex} />
+                            </group>
+                        </Suspense>
                     </group>
-                    {/* Right: ParticleExplosion — Suspense isolates font loading from main canvas */}
-                    <Suspense fallback={null}>
-                        <group position={[xOffset, -yOffset, 0]}>
-                            <ParticleExplosion colorIndex={sphereColorIndex} />
-                        </group>
-                    </Suspense>
-                </group>
+                </Selection>
             )}
 
             <Effects />
