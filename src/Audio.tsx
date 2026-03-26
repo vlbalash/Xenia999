@@ -15,6 +15,7 @@ export default function Audio() {
     const analyserRef = useRef<AnalyserNode | null>(null)
     const dataArrayRef = useRef<Uint8Array | null>(null)
     const rafIdRef = useRef<number | null>(null)
+    const bassSampleRef = useRef<AudioBuffer | null>(null)
 
     const toggleMute = () => {
         if (!masterGainRef.current || !audioCtxRef.current) return
@@ -814,12 +815,30 @@ export default function Audio() {
         window.addEventListener('bass-hold-start', handleBassStart)
         window.addEventListener('bass-hold-stop',  handleBassStop)
 
-        // ── Kick drum on mousedown ──
+        // ── Preload bass sample ──
+        fetch('/bangin-808-bass-bass-falling_C_major.wav')
+            .then(r => r.arrayBuffer())
+            .then(buf => audioCtxRef.current!.decodeAudioData(buf))
+            .then(decoded => { bassSampleRef.current = decoded })
+            .catch(() => {})
+
+        // ── Kick / bass sample on mousedown ──
         const handleKick = () => {
             if (!audioCtxRef.current || isMuted) return
             const ctx = audioCtxRef.current
             const now = ctx.currentTime
             const dest = masterGainRef.current || ctx.destination
+
+            // Play bass sample if loaded
+            if (bassSampleRef.current) {
+                const src = ctx.createBufferSource()
+                src.buffer = bassSampleRef.current
+                const g = ctx.createGain()
+                g.gain.setValueAtTime(0.85, now)
+                src.connect(g); g.connect(dest)
+                src.start(now)
+                return
+            }
 
             // Transient click — noise burst, 4ms
             const cLen = Math.floor(ctx.sampleRate * 0.004)
