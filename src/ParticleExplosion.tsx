@@ -19,9 +19,9 @@ const vertexShader = `
 
   void main() {
     vLocalPos = position;
-    // In ring mode keep only sparse particles (top 22%) — center stays dark
+    // Fade out all particles as ring forms — ring defined by torus mesh, not particles
     float smoothMorphEarly = uRingMorph * uRingMorph * (3.0 - 2.0 * uRingMorph);
-    vRingKeep = mix(1.0, step(0.78, aRandom.x), smoothMorphEarly);
+    vRingKeep = 1.0 - smoothMorphEarly;
     vec3 dir = normalize(position);
 
     vec3 basePos = position * uScale;
@@ -127,7 +127,6 @@ const fragmentShader = `
   }
 
   void main() {
-    if (vRingKeep < 0.5) discard;
     float dist = distance(gl_PointCoord, vec2(0.5));
     if (dist > 0.5) discard;
 
@@ -185,9 +184,8 @@ const fragmentShader = `
         finalColor = mix(finalColor, bleedCol, bleedPeak * 0.45);
     }
 
-    // In ring mode each particle is dimmer — prevents additive blending accumulation in center
-    float ringAlphaScale = mix(1.9, 0.28, ringBlend);
-    alpha *= ringAlphaScale;
+    // Particles fade out completely as ring forms — ring defined by torus mesh only
+    alpha *= 1.9 * vRingKeep;
 
     // WOW burst flash: particles ignite white then cool to new palette
     finalColor = mix(finalColor, vec3(1.0, 1.0, 1.0), pow(uBurst, 0.5) * 0.92);
