@@ -472,7 +472,7 @@ export default function ParticleExplosion({ colorIndex = 0 }: { colorIndex?: num
                                 anchorY="middle"
                                 fillOpacity={1}
                                 letterSpacing={0.04}
-                                font="https://cdn.jsdelivr.net/npm/@fontsource/orbitron@5.0.17/files/orbitron-latin-400-normal.woff"
+                                font="/orbitron-400.woff"
                             >
                                 WEBSITE DEVELOPMENT
                             </Text>
