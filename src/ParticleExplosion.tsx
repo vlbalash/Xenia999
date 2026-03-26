@@ -42,11 +42,12 @@ const vertexShader = `
     float smoothMorph = uRingMorph * uRingMorph * (3.0 - 2.0 * uRingMorph);
     vec3 morphedPosition = mix(explodedPos, ringPos, smoothMorph);
 
-    // Organic turbulence on all 3 axes
+    // Organic turbulence on all 3 axes — suppressed in ring state to prevent z-flicker
+    float turbAmp = 0.05 * (1.0 - smoothMorph * 0.92);
     float tOff = uTime * 2.0;
-    morphedPosition.x += sin(tOff + aRandom.y * 100.0) * 0.05;
-    morphedPosition.y += cos(tOff + aRandom.z * 100.0) * 0.05;
-    morphedPosition.z += sin(tOff + aRandom.x * 100.0) * 0.05;
+    morphedPosition.x += sin(tOff + aRandom.y * 100.0) * turbAmp;
+    morphedPosition.y += cos(tOff + aRandom.z * 100.0) * turbAmp;
+    morphedPosition.z += sin(tOff + aRandom.x * 100.0) * turbAmp;
 
     // Ring entry: radial shimmer peaks at transition midpoint then settles to zero
     float entryPulse = sin(smoothMorph * 3.14159);
@@ -62,6 +63,7 @@ const vertexShader = `
     float baseSize = mix(size, ringSize, smoothMorph);
     gl_PointSize = baseSize * (1.0 + uExplosion * 3.0 * (1.0 - smoothMorph) + entryPulse * 0.5);
     gl_PointSize *= (1.0 / -mvPosition.z);
+    gl_PointSize = max(1.5, gl_PointSize);
     gl_Position = projectionMatrix * mvPosition;
   }
 `
@@ -144,8 +146,8 @@ const fragmentShader = `
     float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
     alpha = pow(alpha, 1.4); // crisper falloff — particles appear brighter and more solid
 
-    // Per-particle brightness from style pattern — keep minimum high for vivid look
-    float particleDensity = mix(0.88, 1.0, factor);
+    // Per-particle brightness from style pattern — ring locks to full brightness to prevent flicker
+    float particleDensity = mix(mix(0.88, 1.0, factor), 1.0, ringBlend);
     alpha *= particleDensity;
 
     // Explosion flash suppressed once ring has formed
