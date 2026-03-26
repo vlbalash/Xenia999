@@ -15,9 +15,13 @@ const vertexShader = `
   attribute vec3 aRandom;
 
   varying vec3 vLocalPos;
+  varying float vRingKeep;
 
   void main() {
     vLocalPos = position;
+    // In ring mode keep only sparse particles (top 22%) — center stays dark
+    float smoothMorphEarly = uRingMorph * uRingMorph * (3.0 - 2.0 * uRingMorph);
+    vRingKeep = mix(1.0, step(0.78, aRandom.x), smoothMorphEarly);
     vec3 dir = normalize(position);
 
     vec3 basePos = position * uScale;
@@ -92,6 +96,7 @@ const fragmentShader = `
   uniform vec3 uC2E;
 
   varying vec3 vLocalPos;
+  varying float vRingKeep;
 
   // Vivid 2-color blend — only uses the two brightest palette entries (A and B)
   // Dark 3rd-5th entries are skipped: they vanish on black with AdditiveBlending
@@ -122,6 +127,7 @@ const fragmentShader = `
   }
 
   void main() {
+    if (vRingKeep < 0.5) discard;
     float dist = distance(gl_PointCoord, vec2(0.5));
     if (dist > 0.5) discard;
 
